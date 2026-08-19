@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import {
+  ArrowRight,
   BookOpen,
   FileSearch,
   Layers,
-  Sparkles,
   Zap,
 } from "lucide-react";
 import { ReasoningTree } from "@/components/brand/ReasoningTree";
@@ -16,6 +16,7 @@ import { Header } from "@/components/layout/Header";
 import { RecentSearches } from "@/components/search/RecentSearches";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SOLUTIONS } from "@/lib/catalog";
+import { BRAND } from "@/lib/constants";
 import { beginResearch } from "@/lib/research/client";
 import { useResearchStore } from "@/lib/store/research-store";
 
@@ -52,6 +53,7 @@ export function HomeView() {
   const router = useRouter();
   const mode = useResearchStore((s) => s.mode);
   const setMode = useResearchStore((s) => s.setMode);
+  const { hero } = BRAND;
 
   useEffect(() => {
     router.prefetch("/signup");
@@ -78,44 +80,33 @@ export function HomeView() {
   return (
     <div className="min-h-screen">
       <Header compact />
-      <main className="mx-auto w-full max-w-6xl px-4 pb-10 pt-6 sm:px-6 sm:pt-8">
-        {/* Hero */}
-        <section className="relative text-center">
+      <main className="mx-auto w-full max-w-6xl px-4 pb-10 pt-8 sm:px-6 sm:pt-12">
+        <section className="relative mx-auto max-w-4xl text-center">
           <div className="hero-glow" aria-hidden />
-          <p className="kicker mb-5">QUORAI Beta</p>
-          <h1 className="relative font-display text-4xl font-semibold leading-[1.05] tracking-[-0.05em] text-ink sm:text-6xl lg:text-[4.25rem]">
-            Generative insights
+          <p className="kicker mb-6">{hero.eyebrow}</p>
+          <h1 className="hero-headline relative text-4xl text-ink sm:text-5xl lg:text-[3.5rem]">
+            {hero.headline}
             <br />
-            <span className="glow-text">at your fingertips.</span>
+            <span className="glow-text">{hero.headlineAccent}</span>
           </h1>
-          <p className="relative mx-auto mt-4 max-w-xl text-base leading-relaxed text-ink-soft sm:text-lg">
-            Ask once. Watch the paths branch. Receive a cited brief you can
-            share, audit, and build on.
-          </p>
-          <div className="relative mt-7 flex flex-wrap items-center justify-center gap-3">
+          <p className="hero-subcopy relative mt-5 sm:mt-6">{hero.subcopy}</p>
+          <div className="relative mt-8">
             <Link
               href="#console"
-              className="inline-flex h-11 min-w-[10.5rem] items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#1a2744] via-violet to-[#f0c4c8] px-8 text-sm font-semibold tracking-wide text-white shadow-[0_10px_36px_rgba(109,91,184,0.38)] transition hover:brightness-110 hover:shadow-[0_14px_48px_rgba(109,91,184,0.48)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet/50"
+              className="inline-flex h-12 items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-[#1a2744] via-violet to-[#f0c4c8] px-8 text-sm font-semibold tracking-wide text-white shadow-[0_10px_36px_rgba(109,91,184,0.38)] transition hover:brightness-110 hover:shadow-[0_14px_48px_rgba(109,91,184,0.48)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet/50"
             >
-              <Sparkles className="h-4 w-4" />
-              Let&apos;s go
-            </Link>
-            <Link
-              href="/product"
-              className="inline-flex h-11 items-center rounded-full border border-line bg-bg-muted/50 px-6 text-sm font-medium text-ink-soft transition hover:border-accent/30 hover:text-ink"
-            >
-              See how it works
+              {hero.cta}
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
-          {/* Stats strip */}
-          <div className="relative mx-auto mt-10 flex max-w-lg flex-wrap justify-center gap-6 sm:gap-10">
+          <div className="hero-stats relative mx-auto mt-12 max-w-2xl">
             {STATS.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <p className="font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+              <div key={stat.label} className="hero-stat">
+                <p className="font-display text-2xl font-semibold tracking-tight text-ink sm:text-[1.75rem]">
                   {stat.value}
                 </p>
-                <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint">
+                <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint">
                   {stat.label}
                 </p>
               </div>
@@ -123,19 +114,17 @@ export function HomeView() {
           </div>
         </section>
 
-        {/* Reasoning tree */}
-        <section className="mt-10">
+        <section className="mt-14">
           <div className="mb-4 text-center">
             <p className="section-label">Research paths</p>
             <p className="mt-1 text-sm text-ink-faint">
-              Click a path to launch a pre-built query
+              Select a path to launch a structured query
             </p>
           </div>
           <ReasoningTree interactive onPick={pickPath} />
         </section>
 
-        {/* Console */}
-        <section id="console" className="mt-12 scroll-mt-24">
+        <section id="console" className="mt-14 scroll-mt-24">
           <div className="mb-5 text-center sm:text-left">
             <p className="section-label">Research console</p>
             <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
@@ -152,7 +141,6 @@ export function HomeView() {
           </div>
         </section>
 
-        {/* Capabilities */}
         <section className="mt-16">
           <div className="gradient-divider mb-10" />
           <div className="text-center">

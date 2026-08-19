@@ -5,6 +5,14 @@ export const BRAND = {
   tagline: "AI-powered web research.",
   description:
     "QUORAI is an AI-powered web research platform that retrieves multiple sources, synthesizes answers with citations, and runs Deep Research across the open web.",
+  hero: {
+    eyebrow: "AI Research Platform",
+    headline: "Evidence-first research",
+    headlineAccent: "synthesized from the live web.",
+    subcopy:
+      "Retrieve sources across the open web, score credibility, and stream a cited brief — built for teams who need answers they can audit and defend.",
+    cta: "Open research console",
+  },
 } as const;
 
 export const MODE_META: Record<

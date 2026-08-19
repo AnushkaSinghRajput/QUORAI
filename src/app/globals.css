@@ -198,6 +198,46 @@ html:not(.dark) .glow-text {
   animation: aurora-drift 12s ease-in-out infinite alternate;
 }
 
+.hero-headline {
+  font-family: var(--font-sora), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.hero-subcopy {
+  max-width: 36rem;
+  margin-inline: auto;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: var(--ink-soft);
+  text-wrap: pretty;
+}
+
+.hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: color-mix(in oklab, var(--bg-elevated) 70%, transparent);
+  backdrop-filter: blur(16px);
+  padding: 1rem 0;
+}
+
+.hero-stat {
+  flex: 1 1 7rem;
+  padding: 0.25rem 1.5rem;
+  text-align: center;
+}
+
+.hero-stat + .hero-stat {
+  border-left: 1px solid var(--line);
+}
+
 .section-label {
   font-family: var(--font-jetbrains), ui-monospace, monospace;
   font-size: 0.625rem;
