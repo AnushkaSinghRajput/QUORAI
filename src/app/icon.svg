@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="quorai-ribbon" x1="4" y1="32" x2="60" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3b4a8a"/>
+      <stop offset="40%" stop-color="#8b6fd4"/>
+      <stop offset="72%" stop-color="#d4c4f8"/>
+      <stop offset="100%" stop-color="#f3cfc8"/>
+    </linearGradient>
+  </defs>
+  <path
+    d="M32 32C27.2 17.5 19.2 12.5 13.2 12.5 5.6 12.5 2.5 20.4 2.5 32s3.1 19.5 10.7 19.5c6 0 14-5 18.8-19.5 4.8 14.5 12.8 19.5 18.8 19.5 7.6 0 10.7-7.9 10.7-19.5S58.4 12.5 50.8 12.5c-6 0-14 5-18.8 19.5Z"
+    stroke="url(#quorai-ribbon)"
+    stroke-width="7"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>
