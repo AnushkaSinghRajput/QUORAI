@@ -44,22 +44,20 @@ export default function CompanyPage() {
           })}
         </div>
         <div className="gradient-divider my-14" />
-        <div className="grid gap-8 lg:grid-cols-2">
-          <div>
-            <p className="section-label">Get in touch</p>
-            <h2 className="mt-2 font-display text-2xl text-ink">Talk to us</h2>
-            <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-              Partnerships, research desks, and press, or{" "}
-              <Link href="/contact" className="font-medium text-cyan hover:underline">
-                the contact page
-              </Link>
-              .
-            </p>
-          </div>
-          <div className="surface rounded-[1.5rem] p-6">
+        <section className="mx-auto max-w-2xl">
+          <p className="section-label">Get in touch</p>
+          <h2 className="section-title">Talk to us</h2>
+          <p className="section-desc mt-3">
+            Partnerships, research desks, and press, or{" "}
+            <Link href="/contact" className="font-medium text-cyan hover:underline">
+              the contact page
+            </Link>
+            .
+          </p>
+          <div className="surface mt-8 rounded-[1.5rem] p-6 sm:p-8">
             <ContactForm />
           </div>
-        </div>
+        </section>
       </main>
       <Footer />
     </div>

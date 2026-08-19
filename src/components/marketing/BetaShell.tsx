@@ -40,7 +40,9 @@ export function BetaShell({
             aria-hidden
             className="mt-3 h-px w-full max-w-xl bg-gradient-to-r from-[#6d5bb8] via-[#c4b5fd] to-[#f3cfc8]"
           />
-          <ReasoningTree className="mt-6" />
+          <div className="signup-tree-panel mt-6 overflow-hidden p-4">
+            <ReasoningTree ambient />
+          </div>
         </div>
         <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-faint">
           AI-powered web research
