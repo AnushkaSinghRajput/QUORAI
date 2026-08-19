@@ -1,9 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Globe, Lock, ShieldCheck, Zap } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
-import { SignupHeroArt } from "@/components/brand/SignupHeroArt";
 import { AuthForm } from "@/components/auth/AuthForm";
-import { SignupPathButtons } from "@/components/marketing/SignupPathButtons";
+import { SignupHeroPanel } from "@/components/marketing/SignupHeroPanel";
 
 const TRUST = [
   { icon: ShieldCheck, label: "Cited sources" },
@@ -11,6 +13,8 @@ const TRUST = [
   { icon: Zap, label: "Quick or Deep" },
   { icon: Globe, label: "Open web" },
 ] as const;
+
+const easeOut = [0.22, 1, 0.36, 1] as const;
 
 export function SignupView() {
   return (
@@ -22,68 +26,60 @@ export function SignupView() {
             <span className="hidden sm:inline">Already have an account?</span>
             <Link
               href="/login"
-              className="inline-flex h-9 items-center rounded-full border border-white/20 px-4 text-sm font-semibold text-ink transition hover:bg-white/8"
+              className="inline-flex h-9 items-center rounded-full border border-white/20 px-4 text-sm font-semibold text-ink transition hover:border-white/35 hover:bg-white/8"
             >
               Log in
             </Link>
           </p>
         </header>
 
-        <main className="grid min-h-0 flex-1 items-start gap-8 overflow-hidden pt-5 lg:grid-cols-[minmax(0,1fr)_24.5rem]">
+        <main className="grid min-h-0 flex-1 items-center gap-10 overflow-hidden py-6 lg:grid-cols-[minmax(0,1fr)_24.5rem]">
           <section className="hidden lg:block">
-            <div className="flex max-w-[36rem] flex-col">
-              <h1 className="font-display text-[2.15rem] font-semibold leading-[1.1] tracking-[-0.045em] text-ink xl:text-[2.45rem]">
-                One query. Many paths.
-                <br />
-                <span className="glow-text">A cited brief.</span>
-              </h1>
-              <p className="mt-2 max-w-[32rem] text-sm leading-snug text-ink-soft">
-                Type a messy question. QUORAI searches the live web, follows a few
-                paths, and writes a brief with sources you can actually use.
-              </p>
-              <div className="mt-4">
-                <SignupPathButtons />
-              </div>
-              <SignupHeroArt className="mt-2" />
-            </div>
+            <SignupHeroPanel />
           </section>
 
-          <section className="flex justify-center lg:justify-end">
-            <div className="w-full max-w-md rounded-[1.5rem] border border-white/12 bg-black/55 p-5 shadow-[0_24px_80px_rgba(4,2,16,0.45)] backdrop-blur-2xl sm:p-6 lg:max-w-none">
-              <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[#f0c4c8]">
-                QUORAI Beta
-              </p>
-              <h2 className="mt-2 font-display text-[1.85rem] tracking-tight text-ink">
-                Join the beta.
+          <motion.section
+            className="flex justify-center lg:justify-end"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.55, ease: easeOut }}
+          >
+            <div className="signup-card w-full max-w-md p-6 sm:p-7 lg:max-w-none">
+              <p className="section-label text-rose">QUORAI Beta</p>
+              <h2 className="mt-2 font-display text-[1.85rem] font-semibold tracking-tight text-ink">
+                Join the beta
               </h2>
-              <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
+              <p className="mt-2 text-sm leading-relaxed text-ink-soft">
                 Help researchers, operators, and builders solve harder problems
                 with cited web research.
               </p>
-              <div className="mt-5">
+              <div className="mt-6">
                 <AuthForm mode="signup" showAltLink={false} compact />
               </div>
-              <p className="mt-3 text-center text-[11px] leading-relaxed text-ink-faint">
+              <p className="mt-4 text-center text-[11px] leading-relaxed text-ink-faint">
                 By continuing, you create a beta account on this workstation.{" "}
-                <Link href="/faq" className="text-[#c4b5fd] hover:text-ink">
+                <Link href="/faq" className="text-accent hover:text-accent-strong">
                   How sessions work
                 </Link>
               </p>
-              <ul className="mt-4 hidden grid-cols-4 gap-2 border-t border-white/10 pt-4 min-[420px]:grid">
-                {TRUST.map((item) => (
-                  <li
+              <ul className="mt-5 hidden grid-cols-4 gap-2 border-t border-line pt-5 min-[420px]:grid">
+                {TRUST.map((item, i) => (
+                  <motion.li
                     key={item.label}
-                    className="flex flex-col items-center gap-1 text-center"
+                    className="flex flex-col items-center gap-1.5 text-center"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 + i * 0.06, duration: 0.35 }}
                   >
-                    <item.icon className="h-3.5 w-3.5 text-[#c4b5fd]" aria-hidden />
+                    <item.icon className="h-3.5 w-3.5 text-accent" aria-hidden />
                     <span className="text-[10px] leading-tight text-ink-soft">
                       {item.label}
                     </span>
-                  </li>
+                  </motion.li>
                 ))}
               </ul>
             </div>
-          </section>
+          </motion.section>
         </main>
       </div>
     </div>

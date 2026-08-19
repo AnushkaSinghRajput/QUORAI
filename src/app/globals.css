@@ -252,6 +252,73 @@ html:not(.dark) .glow-text {
   outline-offset: 2px;
 }
 
+.capability-card {
+  background: color-mix(in oklab, var(--bg-elevated) 90%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  backdrop-filter: blur(20px) saturate(1.1);
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.capability-card:hover {
+  border-color: color-mix(in oklab, var(--accent) 35%, var(--line));
+  box-shadow:
+    var(--shadow-sm),
+    0 0 0 1px color-mix(in oklab, var(--accent) 8%, transparent);
+  transform: translateY(-2px);
+}
+
+.capabilities-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  align-items: stretch;
+}
+
+@media (min-width: 640px) {
+  .capabilities-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .capabilities-grid {
+    gap: 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-glow,
+  .pulse-dot::after,
+  .animate-float {
+    animation: none !important;
+  }
+}
+
+.signup-tree-panel {
+  border: 1px solid var(--line);
+  background: color-mix(in oklab, var(--bg-elevated) 75%, transparent);
+  backdrop-filter: blur(24px) saturate(1.2);
+  box-shadow:
+    0 16px 48px rgba(8, 4, 24, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.signup-card {
+  border-radius: 1.5rem;
+  border: 1px solid var(--line);
+  background: color-mix(in oklab, var(--bg-elevated) 82%, transparent);
+  backdrop-filter: blur(24px) saturate(1.25);
+  box-shadow:
+    0 24px 80px rgba(4, 2, 16, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
 .section-label {
   font-family: var(--font-jetbrains), ui-monospace, monospace;
   font-size: 0.625rem;
@@ -259,6 +326,40 @@ html:not(.dark) .glow-text {
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--cyan);
+}
+
+.section-block {
+  margin-top: 4rem;
+}
+
+.section-block:first-of-type {
+  margin-top: 0;
+}
+
+.section-header {
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+
+.section-title {
+  margin-top: 0.375rem;
+  font-family: var(--font-sora), system-ui, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+@media (min-width: 640px) {
+  .section-title {
+    font-size: 1.875rem;
+  }
+}
+
+.section-desc {
+  margin-top: 0.375rem;
+  font-size: 0.875rem;
+  color: var(--ink-faint);
 }
 
 .gradient-divider {
