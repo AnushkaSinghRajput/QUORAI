@@ -1,0 +1,14 @@
+{
+  "name": "quorai",
+  "description": "QUORAI — AI-powered web research with streaming answers, citations, and Deep Research mode.",
+  "topics": [
+    "ai",
+    "web-search",
+    "deep-research",
+    "nextjs",
+    "typescript",
+    "portfolio",
+    "llm",
+    "streaming"
+  ]
+}
