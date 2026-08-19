@@ -37,7 +37,7 @@ export default function DevelopersPage() {
           Backend, ready to call.
         </h1>
         <p className="mt-3 max-w-xl text-ink-soft">
-          Same routes the product uses — waitlist, auth, catalog, and streaming
+          Same routes the product uses: waitlist, auth, catalog, and streaming
           research. Demo mode works with no vendor keys.
         </p>
 

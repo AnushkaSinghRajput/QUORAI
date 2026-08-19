@@ -36,7 +36,7 @@ export default function ProductPage() {
         </h1>
         <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-soft">
           QUORAI retrieves the live web, scores every source, and streams a
-          synthesis you can audit — not a chatbot improvisation.
+          synthesis you can audit, not a chatbot improvisation.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link

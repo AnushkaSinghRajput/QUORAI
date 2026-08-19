@@ -118,7 +118,7 @@ export function SearchBar({
             <Zap className="h-3.5 w-3.5" />
             {mode === "deep" ? "Deep Research" : "Quick Search"}
             <span className="hidden text-ink-faint sm:inline">
-              · {mode === "deep" ? "8–12" : "4–6"} sources
+              · {mode === "deep" ? "8-12" : "4-6"} sources
             </span>
           </div>
         </div>
@@ -140,7 +140,7 @@ export function SearchBar({
           placeholder={
             files.length
               ? "Ask about the attached file, or launch to analyze it."
-              : "Ask QUORAI anything — or drop a brief, notes, or CSV."
+              : "Ask QUORAI anything, or drop a brief, notes, or CSV."
           }
           aria-label="Research query"
           className="w-full resize-none bg-transparent font-display text-[1.05rem] leading-relaxed text-ink placeholder:text-ink-faint focus:outline-none sm:text-xl"

@@ -17,7 +17,7 @@ export default function FaqPage() {
           Answers, cited in short form
         </h1>
         <p className="mt-3 text-ink-soft">
-          Everything you need to know about QUORAI — from demo mode to production
+          Everything you need to know about QUORAI, from demo mode to production
           deployment.
         </p>
         <div className="mt-10">

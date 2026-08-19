@@ -4,7 +4,7 @@ import { extractDomain, faviconUrl, scoreToCredibility } from "@/lib/utils";
 
 const MOCK_POOL: Array<Omit<Source, "id" | "favicon" | "credibility" | "domain">> = [
   {
-    title: "Attention Is All You Need — foundational overview",
+    title: "Attention Is All You Need: foundational overview",
     url: "https://arxiv.org/abs/1706.03762",
     snippet:
       "The Transformer architecture relies entirely on attention mechanisms, enabling parallelization and strong performance on sequence transduction tasks.",
@@ -28,7 +28,7 @@ const MOCK_POOL: Array<Omit<Source, "id" | "favicon" | "credibility" | "domain">
     publishedAt: "2024-11-03",
   },
   {
-    title: "EU Artificial Intelligence Act — compliance timeline",
+    title: "EU Artificial Intelligence Act: compliance timeline",
     url: "https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai",
     snippet:
       "Risk-based obligations phase in across high-risk systems, transparency duties, and general-purpose AI model requirements.",
@@ -147,7 +147,7 @@ export function buildMockAnswer(
     .slice(0, mode === "deep" ? 5 : 3)
     .map(
       (source, i) =>
-        `${i + 1}. **${source.title}** (${source.domain}) — ${source.snippet}`,
+        `${i + 1}. **${source.title}** (${source.domain}): ${source.snippet}`,
     )
     .join("\n");
 

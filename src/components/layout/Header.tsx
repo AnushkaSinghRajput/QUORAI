@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { SignUpButton } from "@/components/auth/SignUpButton";
-import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { cn } from "@/lib/utils";
 
@@ -109,7 +108,7 @@ export function Header({ compact = false }: { compact?: boolean }) {
                   className="block rounded-xl px-3 py-2 text-sm font-medium text-accent hover:bg-bg-muted"
                   onClick={() => setOpen(false)}
                 >
-                  All solutions →
+                  All solutions
                 </Link>
               </div>
             )}
@@ -130,7 +129,6 @@ export function Header({ compact = false }: { compact?: boolean }) {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
-          <ThemeToggle className="hidden sm:inline-flex" />
           {!user && (
             <Link
               href="/login"
@@ -177,11 +175,6 @@ export function Header({ compact = false }: { compact?: boolean }) {
               {item.label}
             </Link>
           ))}
-          <div className="my-2 h-px bg-line" />
-          <div className="flex items-center justify-between px-3 py-2">
-            <span className="text-xs text-ink-faint">Theme</span>
-            <ThemeToggle />
-          </div>
           {!user && (
             <Link
               href="/login"

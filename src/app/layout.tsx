@@ -28,7 +28,7 @@ const jetbrains = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: `${BRAND.name} — ${BRAND.tagline.replace(/\.$/, "")}`,
+    default: `${BRAND.name} · ${BRAND.tagline.replace(/\.$/, "")}`,
     template: `%s · ${BRAND.name}`,
   },
   description: BRAND.description,
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: `${BRAND.name} — ${BRAND.tagline}`,
+    title: `${BRAND.name} · ${BRAND.tagline}`,
     description: BRAND.description,
     type: "website",
   },

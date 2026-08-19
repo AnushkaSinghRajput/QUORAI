@@ -24,12 +24,12 @@ const CAPABILITIES = [
   {
     icon: Zap,
     title: "Quick Search",
-    body: "Grounded answers from top sources in minutes — not hours of tab-hopping.",
+    body: "Grounded answers from top sources in minutes, not hours of tab-hopping.",
   },
   {
     icon: Layers,
     title: "Deep Research",
-    body: "Wider retrieval, denser synthesis. Built for decisions that need evidence.",
+    body: "Wider retrieval and denser synthesis for decisions that need evidence.",
   },
   {
     icon: BookOpen,
@@ -44,7 +44,7 @@ const CAPABILITIES = [
 ] as const;
 
 const STATS = [
-  { value: "8–12", label: "Sources per deep run" },
+  { value: "8-12", label: "Sources per deep run" },
   { value: "4", label: "Pipeline stages" },
   { value: "100%", label: "Citation-backed" },
 ] as const;
@@ -81,50 +81,44 @@ export function HomeView() {
     <div className="min-h-screen">
       <Header compact />
       <main className="mx-auto w-full max-w-6xl px-4 pb-10 pt-8 sm:px-6 sm:pt-12">
-        <section className="relative mx-auto max-w-4xl text-center">
+        <section className="relative mx-auto max-w-3xl text-center">
           <div className="hero-glow" aria-hidden />
-          <p className="kicker mb-6">{hero.eyebrow}</p>
-          <h1 className="hero-headline relative text-4xl text-ink sm:text-5xl lg:text-[3.5rem]">
+          <p className="section-label mb-5">{hero.eyebrow}</p>
+          <h1 className="hero-headline relative text-4xl text-ink sm:text-5xl lg:text-[3.25rem]">
             {hero.headline}
             <br />
             <span className="glow-text">{hero.headlineAccent}</span>
           </h1>
-          <p className="hero-subcopy relative mt-5 sm:mt-6">{hero.subcopy}</p>
+          <p className="hero-subcopy relative mt-5">{hero.subcopy}</p>
           <div className="relative mt-8">
-            <Link
-              href="#console"
-              className="inline-flex h-12 items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-[#1a2744] via-violet to-[#f0c4c8] px-8 text-sm font-semibold tracking-wide text-white shadow-[0_10px_36px_rgba(109,91,184,0.38)] transition hover:brightness-110 hover:shadow-[0_14px_48px_rgba(109,91,184,0.48)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet/50"
-            >
+            <Link href="#console" className="btn-primary">
               {hero.cta}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
-          <div className="hero-stats relative mx-auto mt-12 max-w-2xl">
+          <dl className="hero-stats relative mx-auto mt-12">
             {STATS.map((stat) => (
               <div key={stat.label} className="hero-stat">
-                <p className="font-display text-2xl font-semibold tracking-tight text-ink sm:text-[1.75rem]">
-                  {stat.value}
-                </p>
-                <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint">
+                <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint">
                   {stat.label}
-                </p>
+                </dt>
+                <dd className="mt-1 font-display text-2xl font-semibold tracking-tight text-ink">
+                  {stat.value}
+                </dd>
               </div>
             ))}
-          </div>
+          </dl>
         </section>
 
-        <section className="mt-14">
+        <section className="mt-16">
           <div className="mb-4 text-center">
             <p className="section-label">Research paths</p>
-            <p className="mt-1 text-sm text-ink-faint">
-              Select a path to launch a structured query
-            </p>
           </div>
           <ReasoningTree interactive onPick={pickPath} />
         </section>
 
-        <section id="console" className="mt-14 scroll-mt-24">
+        <section id="console" className="mt-16 scroll-mt-24">
           <div className="mb-5 text-center sm:text-left">
             <p className="section-label">Research console</p>
             <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight text-ink sm:text-3xl">

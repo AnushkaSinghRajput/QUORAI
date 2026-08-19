@@ -20,7 +20,7 @@ export const PRODUCT_FEATURES = [
   {
     id: "models",
     title: "Bring your LLM",
-    body: "OpenAI, Anthropic, or demo mock — retrieval first, then streamed synthesis.",
+    body: "OpenAI, Anthropic, or demo mock. Retrieval first, then streamed synthesis.",
     href: "/models",
   },
   {
@@ -35,7 +35,7 @@ export const COMPANY = {
   name: "QUORAI",
   headline: "AI-powered web research for consequential work.",
   mission:
-    "QUORAI exists so analysts, operators, and leaders can ask a hard question and receive a cited brief — not a chatbot improvisation.",
+    "QUORAI exists so analysts, operators, and leaders can ask a hard question and receive a cited brief, not a chatbot improvisation.",
   points: [
     {
       title: "Grounded",
@@ -67,7 +67,7 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "retrieval-before-rhetoric",
     title: "Retrieval before rhetoric",
     excerpt:
-      "Why QUORAI never answers from model memory alone — and what that changes for diligence.",
+      "Why QUORAI never answers from model memory alone, and what that changes for diligence.",
     date: "2026-08-12",
     minutes: 4,
     tags: ["Research", "Architecture"],
@@ -87,7 +87,7 @@ export const BLOG_POSTS: BlogPost[] = [
     tags: ["Product"],
     body: [
       "A good research system does not pretend every question is the same size. Explain a term. Compare two vendors. Stress-test a market claim. Those are different paths from the same console.",
-      "QUORAI encodes that as Foundational, Operational, and Strategic tracks. Each card launches a live run with the right depth — Quick Search or Deep Research — and the same citation layer.",
+      "QUORAI encodes that as Foundational, Operational, and Strategic tracks. Each card launches a live run with the right depth, Quick Search or Deep Research, and the same citation layer.",
       "The diagram on the home page is not decoration. It is the product: start with one node, branch, and land on a brief you can defend.",
     ],
   },
@@ -118,7 +118,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     id: "what-is-quorai",
     question: "What is QUORAI?",
     answer:
-      "QUORAI is an AI-powered web research platform. It retrieves multiple sources, scores them, and streams a cited brief — from a simple explanation to a diligence-grade memo.",
+      "QUORAI is an AI-powered web research platform. It retrieves multiple sources, scores them, and streams a cited brief, from a simple explanation to a diligence-grade memo.",
   },
   {
     id: "demo-keys",

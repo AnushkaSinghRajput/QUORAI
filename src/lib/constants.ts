@@ -10,7 +10,7 @@ export const BRAND = {
     headline: "Evidence-first research",
     headlineAccent: "synthesized from the live web.",
     subcopy:
-      "Retrieve sources across the open web, score credibility, and stream a cited brief — built for teams who need answers they can audit and defend.",
+      "Retrieve sources across the open web, score credibility, and stream a cited brief built for teams who need answers they can audit and defend.",
     cta: "Open research console",
   },
 } as const;
@@ -22,12 +22,12 @@ export const MODE_META: Record<
   quick: {
     label: "Quick Search",
     description: "Grounded answer, minutes not hours",
-    sources: "4–6 sources",
+    sources: "4-6 sources",
   },
   deep: {
     label: "Deep Research",
     description: "Multi-source pass with synthesis",
-    sources: "8–12 sources",
+    sources: "8-12 sources",
   },
 };
 
@@ -42,5 +42,4 @@ export const STAGE_LABELS = {
 } as const;
 
 export const HISTORY_STORAGE_KEY = "quorai.history.v1";
-export const THEME_STORAGE_KEY = "quorai.theme.v1";
 export const SESSIONS_STORAGE_KEY = "quorai.sessions.v1";

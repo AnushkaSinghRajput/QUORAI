@@ -49,7 +49,7 @@ export default function CompanyPage() {
             <p className="section-label">Get in touch</p>
             <h2 className="mt-2 font-display text-2xl text-ink">Talk to us</h2>
             <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-              Partnerships, research desks, and press — or{" "}
+              Partnerships, research desks, and press, or{" "}
               <Link href="/contact" className="font-medium text-cyan hover:underline">
                 the contact page
               </Link>

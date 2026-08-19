@@ -19,7 +19,7 @@ export default function ContactPage() {
             Tell us the problem
           </h1>
           <p className="mt-4 leading-relaxed text-ink-soft">
-            From a single analyst workflow to an enterprise research desk —
+            From a single analyst workflow to an enterprise research desk,
             QUORAI can be configured with your search and LLM keys.
           </p>
           <div className="mt-8 surface rounded-[1.6rem] p-6">

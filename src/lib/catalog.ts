@@ -75,15 +75,15 @@ export const LEVEL_META: Record<
 > = {
   foundational: {
     label: "Foundational",
-    blurb: "Everyday questions — explain, check, orient.",
+    blurb: "Everyday questions: explain, check, orient.",
   },
   operational: {
     label: "Operational",
-    blurb: "Team work — compare, scan policy, brief stakeholders.",
+    blurb: "Team work: compare, scan policy, brief stakeholders.",
   },
   strategic: {
     label: "Strategic",
-    blurb: "Consequential work — markets, diligence, long-horizon research.",
+    blurb: "Consequential work: markets, diligence, long-horizon research.",
   },
 };
 
@@ -104,7 +104,7 @@ export const MODEL_CARDS = [
     id: "mock",
     name: "QUORAI Demo",
     models: "On-device mock synthesis",
-    use: "Full product tour with no keys — same pipeline, sample evidence.",
+    use: "Full product tour with no keys. Same pipeline, sample evidence.",
   },
 ] as const;
 
