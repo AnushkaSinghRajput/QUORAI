@@ -226,6 +226,10 @@ export function ResearchWorkspace({
               <span className="rounded-full bg-success/10 px-2 py-0.5 text-success">
                 Live · {session.searchProvider ?? "search"}/{session.llmProvider ?? "llm"}
               </span>
+            ) : session.llmProvider === "extractive" ? (
+              <span className="rounded-full bg-warm-soft px-2 py-0.5 text-cyan">
+                Live search · extractive brief
+              </span>
             ) : session.demoMode ? (
               <span className="rounded-full bg-danger-soft px-2 py-0.5 text-danger">
                 Demo mode
