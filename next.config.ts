@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import path from "path";
+import { withFailproofai } from "@failproofai/sdk/next";
 
 const nextConfig: NextConfig = {
   turbopack: {
@@ -36,4 +37,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withFailproofai(nextConfig);
