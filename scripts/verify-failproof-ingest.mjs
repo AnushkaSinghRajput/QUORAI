@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Ships one official SDK session to Failproof Cloud via POST /v1/events.
- * Reads FAILPROOFAI_API_KEY from the environment (.env.local is not auto-loaded).
+ * Ships one official SDK session to Failproof Cloud via POST /v1/events,
+ * then attempts GET /v1/events with FAILPROOFAI_READ_API_KEY (fallback: ship key).
  *
  * Usage:
- *   export $(grep -v '^#' .env.local | xargs) && node scripts/verify-failproof-ingest.mjs
+ *   set -a && source .env.local && set +a && npm run verify:failproof
  */
 import { configure, session, agent, flush } from "@failproofai/sdk";
 import { mkdtempSync, readdirSync, readFileSync } from "node:fs";
@@ -12,6 +12,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 
 const apiKey = process.env.FAILPROOFAI_API_KEY?.trim();
+const readApiKey =
+  process.env.FAILPROOFAI_READ_API_KEY?.trim() || apiKey || undefined;
 const apiBase = (
   process.env.FAILPROOFAI_API_BASE?.trim() || "https://app.befailproof.ai/v1"
 ).replace(/\/$/, "");
@@ -23,6 +25,14 @@ const environment =
 if (!apiKey) {
   console.error("FAILPROOFAI_API_KEY is missing.");
   process.exit(1);
+}
+
+function headers(key) {
+  const result = {
+    Authorization: `Bearer ${key}`,
+  };
+  if (org) result["X-AgentEye-Org"] = org;
+  return result;
 }
 
 const baseDir = mkdtempSync(path.join(tmpdir(), "quorai-fp-verify-"));
@@ -51,30 +61,64 @@ for (const name of files) {
   ]);
 }
 
-const headers = {
-  Authorization: `Bearer ${apiKey}`,
-  "Content-Type": "application/x-ndjson",
-  "X-Request-Id": `quorai-verify-${Date.now()}`,
-};
-if (org) headers["X-AgentEye-Org"] = org;
-
-const response = await fetch(`${apiBase}/events`, {
+const shipResponse = await fetch(`${apiBase}/events`, {
   method: "POST",
-  headers,
+  headers: {
+    ...headers(apiKey),
+    "Content-Type": "application/x-ndjson",
+    "X-Request-Id": `quorai-verify-${Date.now()}`,
+  },
   body,
 });
-const payload = await response.text();
-console.log(
-  JSON.stringify(
-    {
-      ok: response.ok,
-      status: response.status,
-      sessionId,
-      dashboardUrl: `https://app.befailproof.ai/quoraai`,
-      response: payload,
-    },
-    null,
-    2,
-  ),
+const shipPayload = await shipResponse.text();
+
+const readResponse = await fetch(
+  `${apiBase}/events?${new URLSearchParams({
+    session_id: sessionId,
+    order: "asc",
+    limit: "50",
+  })}`,
+  {
+    headers: headers(readApiKey),
+    cache: "no-store",
+  },
 );
-process.exit(response.ok ? 0 : 2);
+const readPayload = await readResponse.text();
+let readOk = readResponse.ok;
+let eventCount = 0;
+let requiredPermission;
+try {
+  const parsed = JSON.parse(readPayload);
+  requiredPermission = parsed.required_permission;
+  const list = parsed.events || parsed.data || parsed.items || [];
+  eventCount = Array.isArray(list) ? list.length : 0;
+  readOk = readResponse.ok && eventCount > 0;
+} catch {
+  // keep raw payload
+}
+
+const result = {
+  ok: shipResponse.ok && readOk,
+  ship: {
+    ok: shipResponse.ok,
+    status: shipResponse.status,
+    response: shipPayload,
+  },
+  read: {
+    ok: readOk,
+    status: readResponse.status,
+    eventCount,
+    requiredPermission,
+    response: readPayload.slice(0, 500),
+    usedReadKey: Boolean(process.env.FAILPROOFAI_READ_API_KEY?.trim()),
+  },
+  sessionId,
+  dashboardUrl: "https://app.befailproof.ai/quoraai",
+  guidance:
+    !readOk && requiredPermission === "events:read"
+      ? "Add events:read on the ship key in Administration → Keys, or set FAILPROOFAI_READ_API_KEY to a read-capable key. keys:update is human-session only."
+      : undefined,
+};
+
+console.log(JSON.stringify(result, null, 2));
+process.exit(result.ok ? 0 : 2);
