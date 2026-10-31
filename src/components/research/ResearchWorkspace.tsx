@@ -143,6 +143,36 @@ export function ResearchWorkspace({
     };
   }, [hydrateSession, initialSession, session, sessionId]);
 
+  // Stale credential errors (keys added after the run) → auto-retry once.
+  const credentialRetryTried = useRef<string | null>(null);
+  useEffect(() => {
+    if (!session || session.stage !== "error" || !session.error) return;
+    const looksLikeCredentials =
+      /TAVILY_API_KEY|OPENAI_API_KEY|Live research requires|providers are not ready/i.test(
+        session.error,
+      );
+    if (!looksLikeCredentials) return;
+    if (credentialRetryTried.current === session.id) return;
+    credentialRetryTried.current = session.id;
+
+    let cancelled = false;
+    void fetch("/api/health", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok || cancelled) return;
+        const health = (await response.json()) as { liveReady?: boolean };
+        if (!health.liveReady || cancelled) return;
+        const id = beginResearch(session.query, session.mode);
+        router.replace(`/research/${id}#brief`);
+      })
+      .catch(() => {
+        credentialRetryTried.current = null;
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router, session]);
+
   if (!session && !missing) {
     return (
       <div className="min-h-screen">

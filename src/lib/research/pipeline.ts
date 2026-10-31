@@ -20,6 +20,10 @@ import { createSerperProvider } from "@/lib/providers/search/serper";
 import { createTavilyProvider } from "@/lib/providers/search/tavily";
 import type { SearchProvider } from "@/lib/providers/search/types";
 import {
+  buildExtractiveBrief,
+  isLlmBillingFailure,
+} from "@/lib/research/extractive";
+import {
   buildFollowUpPrompt,
   buildSystemPrompt,
   buildUserPrompt,
@@ -393,11 +397,34 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
               }
             }
             if (lastError) {
-              throw new Error(
-                modelFailures.length > 1
-                  ? `All LLM providers failed. ${modelFailures.join(" | ")}`
-                  : lastError.message,
-              );
+              const billingBlocked = modelFailures.every(isLlmBillingFailure);
+              if (billingBlocked && sources.length > 0) {
+                logger.warn(
+                  "LLM billing blocked synthesis; emitting extractive brief from live sources",
+                  { failures: modelFailures.length, sources: sources.length },
+                );
+                trace.noteRecovery(
+                  usedLlm || "llm",
+                  "extractive",
+                  "Model billing/quota blocked synthesis; using extractive brief from live sources.",
+                );
+                const text = buildExtractiveBrief(
+                  input.query,
+                  sources,
+                  input.mode,
+                  modelFailures,
+                );
+                await streamText(emit, sessionId, text, 3);
+                answer = text;
+                usedLlm = "extractive";
+                lastError = null;
+              } else {
+                throw new Error(
+                  modelFailures.length > 1
+                    ? `All LLM providers failed. ${modelFailures.join(" | ")}`
+                    : lastError.message,
+                );
+              }
             }
           });
 
@@ -461,7 +488,10 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
             type: "meta",
             sessionId,
             demoMode: demoSynthesis || usedSearch === "mock" || usedLlm === "mock",
-            liveReady: usedSearch !== "mock" && usedLlm !== "mock",
+            liveReady:
+              usedSearch !== "mock" &&
+              usedLlm !== "mock" &&
+              usedLlm !== "extractive",
             searchProvider: usedSearch,
             llmProvider: usedLlm,
             missingCredentials: config.missingCredentials,
