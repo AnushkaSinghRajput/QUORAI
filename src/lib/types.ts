@@ -44,6 +44,10 @@ export interface ResearchSession {
   messages: Message[];
   followUps: string[];
   error?: string;
+  demoMode?: boolean;
+  liveReady?: boolean;
+  searchProvider?: string;
+  llmProvider?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -58,6 +62,7 @@ export interface HistoryItem {
 
 export interface StreamEvent {
   type:
+    | "meta"
     | "stage"
     | "sources"
     | "token"
@@ -70,4 +75,9 @@ export interface StreamEvent {
   followUps?: string[];
   error?: string;
   sessionId?: string;
+  demoMode?: boolean;
+  liveReady?: boolean;
+  searchProvider?: string;
+  llmProvider?: string;
+  missingCredentials?: string[];
 }

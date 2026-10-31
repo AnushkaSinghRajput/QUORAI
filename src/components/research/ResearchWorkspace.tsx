@@ -192,6 +192,15 @@ export function ResearchWorkspace({
             <span className="rounded-full bg-accent-soft px-2 py-0.5 text-accent">
               {MODE_META[session.mode].label}
             </span>
+            {session.demoMode ? (
+              <span className="rounded-full bg-danger-soft px-2 py-0.5 text-danger">
+                Demo mode
+              </span>
+            ) : session.liveReady ? (
+              <span className="rounded-full bg-success/10 px-2 py-0.5 text-success">
+                Live · {session.searchProvider ?? "search"}/{session.llmProvider ?? "llm"}
+              </span>
+            ) : null}
             <span className="inline-flex items-center gap-1">
               <Clock className="h-3 w-3" />
               {formatRelativeTime(session.updatedAt)}
@@ -201,6 +210,14 @@ export function ResearchWorkspace({
             </Link>
           </div>
         </div>
+        {session.demoMode && (
+          <div className="mb-5 rounded-2xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-ink">
+            This brief used demo providers. It is not live web research. Add
+            <code className="mx-1 font-mono text-xs">TAVILY_API_KEY</code> and
+            <code className="mx-1 font-mono text-xs">OPENAI_API_KEY</code>
+            for production answers.
+          </div>
+        )}
 
         <div className="mb-6 max-w-3xl">
           <p className="section-label">Active brief</p>

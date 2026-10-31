@@ -9,6 +9,7 @@ import { ReasoningTree } from "@/components/brand/ReasoningTree";
 import { CapabilityCards } from "@/components/marketing/CapabilityCards";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { ProviderStatus } from "@/components/search/ProviderStatus";
 import { RecentSearches } from "@/components/search/RecentSearches";
 import { SearchBar } from "@/components/search/SearchBar";
 import { SOLUTIONS } from "@/lib/catalog";
@@ -147,6 +148,7 @@ export function HomeView() {
             onModeChange={setMode}
             onSubmit={(query, attachments) => launch(query, mode, attachments)}
           />
+          <ProviderStatus />
           <div className="mt-6">
             <RecentSearches />
           </div>

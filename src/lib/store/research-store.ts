@@ -156,6 +156,12 @@ export const useResearchStore = create<ResearchState>()(
           };
 
           switch (event.type) {
+            case "meta":
+              next.demoMode = event.demoMode;
+              next.liveReady = event.liveReady;
+              next.searchProvider = event.searchProvider;
+              next.llmProvider = event.llmProvider;
+              break;
             case "stage":
               if (event.stage) next.stage = event.stage as ResearchStage;
               break;
