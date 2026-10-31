@@ -76,7 +76,14 @@ export function AnswerPanel({
   const extractive = /Extractive brief/i.test(answer);
 
   if (stage === "error" && error) {
-    return <ErrorState description={error} onRetry={onRetry} />;
+    const title = /TAVILY_API_KEY|OPENAI_API_KEY|Live research requires|providers are not ready/i.test(
+      error,
+    )
+      ? "Providers not configured"
+      : /credits|billing|quota|credit balance/i.test(error)
+        ? "Model billing required"
+        : "Something went wrong";
+    return <ErrorState title={title} description={error} onRetry={onRetry} />;
   }
 
   return (
