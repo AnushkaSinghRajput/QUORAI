@@ -351,6 +351,19 @@ export class ResearchTrace {
         sessionId: this.run.sessionId,
       });
     }
+    if (!this.ready) return;
+    try {
+      const message = error instanceof Error ? error.message : String(error);
+      event.error({
+        errorType:
+          error instanceof PolicyDenied ? error.policy : "ResearchFailure",
+        message: this.capture ? message.slice(0, 500) : message.slice(0, 120),
+      });
+    } catch (emitError) {
+      logger.warn("Failproof error event failed", {
+        error: emitError instanceof Error ? emitError.message : String(emitError),
+      });
+    }
   }
 }
 

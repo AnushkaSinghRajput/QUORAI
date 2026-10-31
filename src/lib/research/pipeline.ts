@@ -165,16 +165,34 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
     const blocker =
       credentialsBlockerMessage(config) ??
       "Live providers are not configured.";
-    await emit({
-      type: "meta",
-      sessionId,
-      demoMode: true,
-      liveReady: false,
-      searchProvider: config.searchProvider,
-      llmProvider: config.llmProvider,
-      missingCredentials: config.missingCredentials,
-    });
-    await reportError(blocker);
+    // Still open a Failproof session so credential blocks produce real Cloud events.
+    try {
+      await withResearchSession(
+        {
+          sessionId,
+          query: input.query,
+          mode: input.mode,
+          protection: input.protection ?? "protected",
+          history: input.history,
+        },
+        async (trace) => {
+          await emit({
+            type: "meta",
+            sessionId,
+            demoMode: true,
+            liveReady: false,
+            searchProvider: config.searchProvider,
+            llmProvider: config.llmProvider,
+            missingCredentials: config.missingCredentials,
+          });
+          trace.noteFailure("CredentialsMissing", blocker, false);
+          await reportError(blocker);
+          throw new Error(blocker);
+        },
+      );
+    } catch {
+      // reportError already streamed the user-facing failure.
+    }
     return;
   }
 
