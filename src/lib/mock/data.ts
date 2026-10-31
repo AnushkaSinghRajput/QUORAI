@@ -145,9 +145,10 @@ export function buildMockAnswer(
 
   const bullets = sources
     .slice(0, mode === "deep" ? 5 : 3)
-    .map(
-      (source, i) =>
-        `${i + 1}. **${source.title}** (${source.domain}): ${source.snippet}`,
+    .map((source, i) =>
+      source.kind === "document"
+        ? `${i + 1}. **From ${source.documentName}${source.page ? `, page ${source.page}` : ""}:** ${source.snippet.slice(0, 320)} [${i + 1}]`
+        : `${i + 1}. **${source.title}** (${source.domain}): ${source.snippet} [${i + 1}]`,
     )
     .join("\n");
 
