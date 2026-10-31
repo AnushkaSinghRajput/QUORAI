@@ -141,7 +141,16 @@ export function CompareDemo() {
       <p className="mt-3 max-w-2xl text-ink-soft">
         Run the same query twice through the real QUORAI pipeline. Protected mode
         enforces loop, tool, citation and evidence policies. Unprotected mode still
-        records what would have happened, but does not block the run.
+        records what would have happened, but does not block the run. Both lanes use
+        live execution — not fake charts.
+      </p>
+      <p className="mt-2 max-w-2xl text-xs text-ink-faint">
+        Tip: after the run finishes, open either reliability record, then try the same
+        query from the{" "}
+        <Link href="/#console" className="text-accent">
+          research console
+        </Link>{" "}
+        with a PDF attached to see citation confidence on the brief.
       </p>
 
       <div className="surface mt-8 rounded-[1.5rem] p-5 sm:p-6">

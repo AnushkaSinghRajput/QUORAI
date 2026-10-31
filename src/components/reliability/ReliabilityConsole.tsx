@@ -162,6 +162,38 @@ export function ReliabilityConsole() {
               Open dashboard
             </a>
           </div>
+          {!payload.failproof.configured && (
+            <div className="mt-4 rounded-2xl border border-cyan/25 bg-warm-soft/40 px-4 py-4 text-sm text-ink">
+              <p className="font-display text-base text-ink">Connect Failproof in 3 steps</p>
+              <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-ink-soft">
+                <li>
+                  Open{" "}
+                  <a
+                    href="https://app.befailproof.ai/quoraai"
+                    className="text-accent"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    the quoraai workspace
+                  </a>{" "}
+                  → Administration → Keys
+                </li>
+                <li>
+                  Mint an organization key with <code className="font-mono text-xs">events:add</code>{" "}
+                  and <code className="font-mono text-xs">events:read</code>
+                </li>
+                <li>
+                  Set <code className="font-mono text-xs">FAILPROOFAI_API_KEY</code> in Vercel
+                  Production (and <code className="font-mono text-xs">.env.local</code> locally), then
+                  redeploy
+                </li>
+              </ol>
+              <p className="mt-3 text-xs text-ink-faint">
+                Research, PDF uploads, citations, and this console keep working without the key.
+                Cloud traces appear in Failproof only after the key is set.
+              </p>
+            </div>
+          )}
           {payload.failproof.missing.map((item) => (
             <p
               key={item}
