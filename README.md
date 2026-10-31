@@ -79,13 +79,16 @@ npm test
 npm run build
 npm run check:providers
 npm run verify:failproof   # needs FAILPROOFAI_API_KEY in env
+npm run verify:research    # SSE smoke against BASE_URL (default: production)
 ```
+
+If model APIs are billing-blocked, `verify:research` still passes when live search returns sources and an extractive brief. Add OpenAI or Anthropic credits for full model synthesis.
 
 ---
 
 ## Product walkthrough
 
-See [docs/PRODUCT_WALKTHROUGH.md](./docs/PRODUCT_WALKTHROUGH.md) for the operator tour (`/demo`, `/reliability`, Failproof dashboard).
+See [docs/PRODUCT_WALKTHROUGH.md](./docs/PRODUCT_WALKTHROUGH.md) for the operator tour (`/demo`, `/reliability`, Failproof dashboard), including the extractive-brief path when LLM billing blocks synthesis.
 
 ---
 
