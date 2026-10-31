@@ -19,10 +19,13 @@ export interface CloudVerification {
   requiredPermission?: string;
 }
 
-function headers(): Record<string, string> {
+function headers(forRead = false): Record<string, string> {
   const config = getFailproofConfig();
+  const apiKey = forRead
+    ? (config.readApiKey ?? config.apiKey)
+    : config.apiKey;
   const result: Record<string, string> = {
-    Authorization: `Bearer ${config.apiKey}`,
+    Authorization: `Bearer ${apiKey}`,
   };
   if (config.org) result["X-AgentEye-Org"] = config.org;
   return result;
@@ -59,14 +62,14 @@ function eventType(event: unknown): string {
 export async function verifyCloudSession(sessionId: string): Promise<CloudVerification> {
   const config = getFailproofConfig();
   const checkedAt = new Date().toISOString();
-  if (!config.apiKey) {
+  if (!config.apiKey && !config.readApiKey) {
     return {
       ok: false,
       checkedAt,
       sessionId,
       dashboardUrl: config.dashboardUrl,
       error:
-        "FAILPROOFAI_API_KEY is not set. Mint an organization key for quoraai with events:add and events:read.",
+        "FAILPROOFAI_API_KEY is not set. Mint an organization key for quoraai with events:add. Add events:read on that key or set FAILPROOFAI_READ_API_KEY.",
     };
   }
 
@@ -76,7 +79,7 @@ export async function verifyCloudSession(sessionId: string): Promise<CloudVerifi
     limit: "200",
   });
   const response = await fetch(`${config.apiBase}/events?${params}`, {
-    headers: headers(),
+    headers: headers(true),
     signal: AbortSignal.timeout(12_000),
     cache: "no-store",
   });
@@ -87,6 +90,20 @@ export async function verifyCloudSession(sessionId: string): Promise<CloudVerifi
     undefined;
 
   if (!response.ok) {
+    const requiredPermission =
+      typeof body.required_permission === "string"
+        ? body.required_permission
+        : undefined;
+    const baseError =
+      typeof body.message === "string"
+        ? body.message
+        : typeof body.error === "string"
+          ? body.error
+          : `Failproof events read failed (${response.status}).`;
+    const guidance =
+      requiredPermission === "events:read"
+        ? " Open Administration → Keys in the quoraai workspace, add events:read to the ship key, or mint a read-only key and set FAILPROOFAI_READ_API_KEY. keys:update is human-session only."
+        : "";
     return {
       ok: false,
       checkedAt,
@@ -94,16 +111,8 @@ export async function verifyCloudSession(sessionId: string): Promise<CloudVerifi
       dashboardUrl: config.dashboardUrl,
       status: response.status,
       requestId,
-      requiredPermission:
-        typeof body.required_permission === "string"
-          ? body.required_permission
-          : undefined,
-      error:
-        typeof body.message === "string"
-          ? body.message
-          : typeof body.error === "string"
-            ? body.error
-            : `Failproof events read failed (${response.status}).`,
+      requiredPermission,
+      error: `${baseError}${guidance}`,
     };
   }
 
@@ -133,7 +142,11 @@ export async function verifyCloudSession(sessionId: string): Promise<CloudVerifi
 
   const sessions = await fetch(
     `${config.apiBase}/sessions?${new URLSearchParams({ session_id: sessionId, limit: "5" })}`,
-    { headers: headers(), signal: AbortSignal.timeout(12_000), cache: "no-store" },
+    {
+      headers: headers(true),
+      signal: AbortSignal.timeout(12_000),
+      cache: "no-store",
+    },
   );
   const sessionsBody = await readJson(sessions);
   if (sessions.ok) {

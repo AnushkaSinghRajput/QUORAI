@@ -1,64 +1,45 @@
-# QUORAI
+# QUORAI 2.0
 
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38BDF8?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-7c3aed?style=flat-square)](./LICENSE)
 
-**AI-powered web research.**
+**AI-powered web research with Failproof agent reliability.**
 
-QUORAI searches the open web, ranks sources, and streams a cited brief. It supports Quick Search, Deep Research, and follow-up questions. Demo mode works with no API keys.
+QUORAI retrieves multi-source evidence (Tavily primary), synthesizes a cited brief (OpenAI primary), and ships genuine runtime traces to the Failproof **quoraai** workspace. Mock answers are **opt-in only** (`ALLOW_MOCK_FALLBACK=1`) and are never presented as live research.
+
+Production: [https://quorai-ecru.vercel.app](https://quorai-ecru.vercel.app)
 
 ---
 
 ## Product overview
 
-- **Quick Search** — grounded answers from top sources
-- **Deep Research** — wider retrieval and denser synthesis
-- **Streaming** — tokens appear as the brief is composed
-- **Citations** — expandable source cards with credibility + relevance
-- **Follow-ups** — conversation context stays on the thread
-- **Accounts** — signup / sign-in with httpOnly sessions
-- **Demo mode** — full UI without vendor keys
+- **Quick Search / Deep Research** — ranked sources + streamed cited brief
+- **Citations & evidence** — source cards, citation confidence, PDF/text uploads
+- **Failproof monitoring** — agent/tool/model events shipped to Cloud
+- **Reliability console** — `/reliability` metrics, decisions, Cloud verify
+- **Protected vs unprotected demo** — `/demo` side-by-side genuine runs
+- **Accounts** — httpOnly sessions (requires real `AUTH_SECRET`)
 
 ---
 
 ## Architecture
 
 ```text
-src/
-  app/                     # App Router pages + API routes
-    api/research/          # SSE research pipeline
-    api/auth/              # signup, login, logout, me
-    api/leads/             # waitlist + contact
-    solutions/ models/ contact/
-    research/[id]/         # Research workspace
-  components/
-    brand/ marketing/ layout/ search/ research/ ui/ auth/ providers/
-  lib/
-    providers/search/      # Tavily | Serper | mock
-    providers/llm/         # OpenAI | Anthropic | mock
-    research/              # Pipeline, prompts, client
-    auth/                  # sessions, hashing, user store
-    store/                 # Zustand history + sessions
+Browser → POST /api/research (SSE)
+        → research/pipeline.ts
+           ├─ search chain: Tavily → Serper (optional) → mock (opt-in)
+           ├─ llm chain:    OpenAI → Anthropic (optional) → mock (opt-in)
+           ├─ guards: loops, tool limits, evidence, citations, drift
+           └─ Failproof SDK spool → POST /v1/events → quoraai workspace
 ```
 
-**Flow**
-
-1. Client creates a session and routes to `/research/[id]`
-2. `POST /api/research` streams SSE (`stage`, `sources`, `token`, `follow_ups`, `done`)
-3. Zustand applies events
-4. UI renders pipeline HUD, streamed answer, evidence, follow-ups
-
-Search and LLM vendors are selected from environment variables — not hard-wired.
-
----
-
-## Tech stack
-
-- Next.js 16 (App Router) + React 19 + TypeScript
-- Tailwind CSS 4
-- Zustand, Zod, Framer Motion
+| Layer | Primary | Optional fallback |
+| --- | --- | --- |
+| Search | Tavily | Serper |
+| LLM | OpenAI | Anthropic |
+| Reliability | Failproof Cloud (`quoraai`) | Local reliability records |
 
 ---
 
@@ -66,23 +47,19 @@ Search and LLM vendors are selected from environment variables — not hard-wire
 
 Copy `.env.example` → `.env.local`:
 
-| Variable | Description |
-| --- | --- |
-| `SEARCH_PROVIDER` | `auto` \| `mock` \| `tavily` \| `serper` |
-| `LLM_PROVIDER` | `auto` \| `mock` \| `openai` \| `anthropic` |
-| `TAVILY_API_KEY` | Tavily search key |
-| `SERPER_API_KEY` | Serper search key |
-| `OPENAI_API_KEY` / `OPENAI_MODEL` | OpenAI chat + model |
-| `ANTHROPIC_API_KEY` / `ANTHROPIC_MODEL` | Anthropic chat + model |
-| `AUTH_SECRET` | Secret used to sign session cookies |
-| `QUORAI_API_KEY` | Optional Bearer token for list/admin APIs |
-| `CONTACT_WEBHOOK_URL` | Optional Slack/Make webhook for leads |
-| `CORS_ORIGIN` | Optional allowed origin for `/api` |
-| `LOG_LEVEL` | Optional: `debug` \| `info` \| `warn` \| `error` |
-| `RESEARCH_RATE_LIMIT` | Optional requests per window (default `30`) |
-| `RESEARCH_RATE_WINDOW_MS` | Optional window ms (default `60000`) |
-
-With no keys configured, QUORAI uses mock providers automatically.
+| Variable | Required | Description |
+| --- | --- | --- |
+| `TAVILY_API_KEY` | Yes (live) | Primary search |
+| `OPENAI_API_KEY` | Yes (live) | Primary LLM |
+| `OPENAI_MODEL` | No | Default `gpt-4o-mini` |
+| `AUTH_SECRET` | Yes (auth) | Session signing (no hardcoded fallback) |
+| `FAILPROOFAI_API_KEY` | Recommended | Ship traces (`events:add`) |
+| `FAILPROOFAI_READ_API_KEY` | Optional | Cloud verify if ship key lacks `events:read` |
+| `SEARCH_PROVIDER` | No | Default `tavily` |
+| `LLM_PROVIDER` | No | Default `openai` |
+| `ALLOW_MOCK_FALLBACK` | No | Default off. Set `1` only for labeled demos |
+| `SERPER_API_KEY` / `ANTHROPIC_API_KEY` | No | Optional fallbacks |
+| `QUORAI_API_KEY` | No | Bearer for list/admin APIs |
 
 ---
 
@@ -91,84 +68,57 @@ With no keys configured, QUORAI uses mock providers automatically.
 ```bash
 npm install
 cp .env.example .env.local
+# Fill TAVILY_API_KEY, OPENAI_API_KEY, AUTH_SECRET, FAILPROOFAI_API_KEY
 npm run dev
 ```
-
-Open [http://localhost:3000](http://localhost:3000).
 
 ```bash
 npm run lint
 npm run typecheck
+npm test
 npm run build
-npm start
+npm run check:providers
+npm run verify:failproof   # needs FAILPROOFAI_API_KEY in env
+npm run verify:research    # SSE smoke against BASE_URL (default: production)
 ```
+
+If model APIs are billing-blocked, `verify:research` still passes when live search returns sources and an extractive brief. Add OpenAI or Anthropic credits for full model synthesis.
+
+---
+
+## Product walkthrough
+
+See [docs/PRODUCT_WALKTHROUGH.md](./docs/PRODUCT_WALKTHROUGH.md) for the operator tour (`/demo`, `/reliability`, Failproof dashboard), including the extractive-brief path when LLM billing blocks synthesis.
 
 ---
 
 ## API
 
-Base: `/api` · Discovery: `GET /api` · Docs UI: `/developers`
+Discovery: `GET /api` · Docs UI: `/developers`
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/health` | Liveness, providers, persistence |
-| `GET` | `/api/catalog` | Solutions + models |
+| `GET` | `/api/health?failproof=1` | Liveness + credential + Failproof probes |
 | `POST` | `/api/research` | SSE research pipeline |
-| `GET` | `/api/briefs/:id` | Persisted brief |
-| `GET` | `/api/briefs` | List briefs (signed-in or API key) |
-| `POST` | `/api/leads/waitlist` | Beta waitlist |
-| `POST` | `/api/leads/contact` | Contact desk |
-| `POST` | `/api/auth/signup` | Create account |
-| `POST` | `/api/auth/login` | Sign in |
-| `POST` | `/api/auth/logout` | Sign out |
-| `GET` | `/api/auth/me` | Current user |
-| `GET` | `/api/admin/leads` | Waitlist + contacts (`QUORAI_API_KEY`) |
-
-`POST /api/research`
-
-```json
-{
-  "query": "Compare RAG architectures for production chatbots",
-  "mode": "deep",
-  "sessionId": "optional-id",
-  "attachments": [{ "name": "notes.md", "text": "..." }],
-  "history": [
-    { "role": "user", "content": "..." },
-    { "role": "assistant", "content": "..." }
-  ]
-}
-```
-
-Response: `text/event-stream` (`stage`, `sources`, `token`, `follow_ups`, `done`). Live provider failures fall back to mock synthesis. Briefs are stored server-side (disk locally, memory on read-only hosts).
-
-Optional: `Authorization: Bearer $QUORAI_API_KEY`. Optional `CONTACT_WEBHOOK_URL` forwards waitlist and contact events.
+| `POST` | `/api/demo/compare` | Protected vs unprotected comparison |
+| `GET` | `/api/reliability` | Run history + metrics |
+| `GET` | `/api/reliability/:id?verify=1` | Cloud session verify |
+| `POST` | `/api/files/extract` | PDF/text extract |
 
 ---
 
-## Deployment
+## Deployment (Vercel · QuoraAI only)
 
-**Use Vercel.** It is the native host for Next.js (streaming, App Router, env vars, preview URLs).
+Project: `anushka-singh-rajputs-projects/quorai` → [https://quorai-ecru.vercel.app](https://quorai-ecru.vercel.app)
 
-1. Push this repo to GitHub
-2. Import the project at [vercel.com/new](https://vercel.com/new)
-3. Add env vars from `.env.example` (`AUTH_SECRET`, optional search/LLM keys)
-4. Deploy
+1. Set Production env vars from the table above (real values, not placeholders)
+2. `ALLOW_MOCK_FALLBACK=0`
+3. `FAILPROOFAI_ENVIRONMENT=production`
+4. Deploy from the product branch:
 
 ```bash
-npx vercel
+vercel deploy --prod --scope anushka-singh-rajputs-projects
 ```
-
-Public URL will look like `https://quorai.vercel.app`.
-
-**Also works on:** Netlify, Railway, or any Node 20+ host with `npm run build && npm start`. For a GitHub resume demo, Vercel is the fastest path.
-
----
-
-## Future improvements
-
-- Redis-backed rate limits and briefs
-- Claim-level citation highlighting
-- Team workspaces
 
 ---
 

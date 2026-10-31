@@ -310,10 +310,12 @@ export class ResearchTrace {
       ),
     );
     this.emitHook(drift, "model_response");
+    // Protected always hard-validates. FAILPROOFAI_ENFORCE_EVIDENCE=1 also
+    // requests deny actions on unprotected runs (applyProtection may soften them).
     const evidence = inspectEvidence(
       answer,
       sources,
-      this.protection === "protected",
+      this.protection === "protected" || config.enforceEvidence,
     );
     const evidenceDecision = this.decide(evidence.decision);
     this.emitHook(evidenceDecision, "model_response", {
@@ -349,6 +351,19 @@ export class ResearchTrace {
       logger.warn("Research policy blocked a step", {
         policy: error.policy,
         sessionId: this.run.sessionId,
+      });
+    }
+    if (!this.ready) return;
+    try {
+      const message = error instanceof Error ? error.message : String(error);
+      event.error({
+        errorType:
+          error instanceof PolicyDenied ? error.policy : "ResearchFailure",
+        message: this.capture ? message.slice(0, 500) : message.slice(0, 120),
+      });
+    } catch (emitError) {
+      logger.warn("Failproof error event failed", {
+        error: emitError instanceof Error ? emitError.message : String(emitError),
       });
     }
   }

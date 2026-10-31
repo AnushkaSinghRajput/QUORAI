@@ -143,6 +143,36 @@ export function ResearchWorkspace({
     };
   }, [hydrateSession, initialSession, session, sessionId]);
 
+  // Stale credential errors (keys added after the run) → auto-retry once.
+  const credentialRetryTried = useRef<string | null>(null);
+  useEffect(() => {
+    if (!session || session.stage !== "error" || !session.error) return;
+    const looksLikeCredentials =
+      /TAVILY_API_KEY|OPENAI_API_KEY|Live research requires|providers are not ready/i.test(
+        session.error,
+      );
+    if (!looksLikeCredentials) return;
+    if (credentialRetryTried.current === session.id) return;
+    credentialRetryTried.current = session.id;
+
+    let cancelled = false;
+    void fetch("/api/health", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok || cancelled) return;
+        const health = (await response.json()) as { liveReady?: boolean };
+        if (!health.liveReady || cancelled) return;
+        const id = beginResearch(session.query, session.mode);
+        router.replace(`/research/${id}#brief`);
+      })
+      .catch(() => {
+        credentialRetryTried.current = null;
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [router, session]);
+
   if (!session && !missing) {
     return (
       <div className="min-h-screen">
@@ -192,13 +222,17 @@ export function ResearchWorkspace({
             <span className="rounded-full bg-accent-soft px-2 py-0.5 text-accent">
               {MODE_META[session.mode].label}
             </span>
-            {session.demoMode ? (
-              <span className="rounded-full bg-danger-soft px-2 py-0.5 text-danger">
-                Demo mode
-              </span>
-            ) : session.liveReady ? (
+            {session.liveReady ? (
               <span className="rounded-full bg-success/10 px-2 py-0.5 text-success">
                 Live · {session.searchProvider ?? "search"}/{session.llmProvider ?? "llm"}
+              </span>
+            ) : session.llmProvider === "extractive" ? (
+              <span className="rounded-full bg-warm-soft px-2 py-0.5 text-cyan">
+                Live search · extractive brief
+              </span>
+            ) : session.demoMode ? (
+              <span className="rounded-full bg-danger-soft px-2 py-0.5 text-danger">
+                Demo mode
               </span>
             ) : null}
             <span className="inline-flex items-center gap-1">
@@ -210,15 +244,6 @@ export function ResearchWorkspace({
             </Link>
           </div>
         </div>
-        {session.demoMode && (
-          <div className="mb-5 rounded-2xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-ink">
-            This brief used demo providers. It is not live web research. Add
-            <code className="mx-1 font-mono text-xs">TAVILY_API_KEY</code> and
-            <code className="mx-1 font-mono text-xs">OPENAI_API_KEY</code>
-            for production answers.
-          </div>
-        )}
-
         <div className="mb-6 max-w-3xl">
           <p className="section-label">Active brief</p>
           <h1 className="mt-2 font-display text-3xl font-semibold leading-tight tracking-[-0.04em] text-ink sm:text-4xl">

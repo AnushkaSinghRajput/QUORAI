@@ -10,6 +10,8 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
     formats: ["image/avif", "image/webp"],
+    // Brand/marketing assets use 65–70; keep 75 as the default Next quality.
+    qualities: [65, 70, 75],
     minimumCacheTTL: 60 * 60 * 24 * 7,
     remotePatterns: [
       {

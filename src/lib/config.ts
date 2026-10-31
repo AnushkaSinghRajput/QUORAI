@@ -171,6 +171,16 @@ export function getAppConfig() {
 
 export type AppConfig = ReturnType<typeof getAppConfig>;
 
+/** Non-secret status for operator diagnostics (never returns values). */
+export function credentialPresence(
+  key: string,
+): "missing" | "placeholder" | "configured" {
+  const value = env(key);
+  if (!value) return "missing";
+  if (!liveSecret(key)) return "placeholder";
+  return "configured";
+}
+
 export function credentialsBlockerMessage(config: AppConfig = getAppConfig()) {
   const needed = [
     !config.providerCredentials.tavily &&

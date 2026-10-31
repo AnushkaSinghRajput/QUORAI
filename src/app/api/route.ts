@@ -29,6 +29,12 @@ export async function GET() {
       logout: { method: "POST", path: "/api/auth/logout" },
       me: { method: "GET", path: "/api/auth/me" },
       reliability: { method: "GET", path: "/api/reliability" },
+      reliabilitySession: {
+        method: "GET",
+        path: "/api/reliability/:id?verify=1",
+      },
+      demoCompare: { method: "POST", path: "/api/demo/compare" },
+      filesExtract: { method: "POST", path: "/api/files/extract" },
     },
   });
 }

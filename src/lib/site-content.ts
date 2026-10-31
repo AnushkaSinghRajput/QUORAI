@@ -95,14 +95,14 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "keys-when-you-need-them",
     title: "Keys when you need them",
     excerpt:
-      "Demo mode is the full product. Live search and LLM keys are a configuration change, not a rewrite.",
+      "Live research needs Tavily and OpenAI. Mock answers are opt-in and never presented as live briefs.",
     date: "2026-07-22",
     minutes: 3,
     tags: ["Engineering"],
     body: [
-      "QUORAI ships with mock search and mock synthesis so the console, citations, follow-ups, and accounts work on day one.",
-      "Set TAVILY_API_KEY or SERPER_API_KEY and OPENAI_API_KEY or ANTHROPIC_API_KEY. SEARCH_PROVIDER and LLM_PROVIDER stay on auto unless you pin them.",
-      "If a live provider fails, the pipeline falls back to mock rather than failing the brief. That is deliberate: the product should remain usable while keys rotate.",
+      "Production QUORAI expects TAVILY_API_KEY and OPENAI_API_KEY. SEARCH_PROVIDER defaults to tavily and LLM_PROVIDER defaults to openai.",
+      "Mock search/synthesis only run when ALLOW_MOCK_FALLBACK=1 (or a provider is explicitly set to mock). Otherwise the API returns a clear credentials error.",
+      "Failproof traces ship to the quoraai workspace when FAILPROOFAI_API_KEY is set. Cloud verify also needs events:read or FAILPROOFAI_READ_API_KEY.",
     ],
   },
 ];
@@ -124,7 +124,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     id: "demo-keys",
     question: "Do I need API keys to try it?",
     answer:
-      "No. Demo mode runs the full pipeline with mock search and mock synthesis. Add Tavily/Serper and OpenAI/Anthropic keys when you want live retrieval and live models.",
+      "Yes for live research. Set TAVILY_API_KEY and OPENAI_API_KEY (plus AUTH_SECRET). Mock answers are disabled by default. Optional Failproof key ships agent traces to the quoraai workspace.",
   },
   {
     id: "deep-vs-quick",

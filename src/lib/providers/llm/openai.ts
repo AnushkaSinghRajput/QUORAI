@@ -41,7 +41,20 @@ export function createOpenAIProvider(
       });
 
       if (!response.ok || !response.body) {
-        throw new Error(`OpenAI request failed (${response.status})`);
+        let detail = "";
+        try {
+          const body = (await response.json()) as {
+            error?: { message?: string; code?: string; type?: string };
+          };
+          detail = body.error?.message ?? body.error?.code ?? "";
+        } catch {
+          detail = "";
+        }
+        throw new Error(
+          detail
+            ? `OpenAI request failed (${response.status}): ${detail}`
+            : `OpenAI request failed (${response.status})`,
+        );
       }
 
       const reader = response.body.getReader();

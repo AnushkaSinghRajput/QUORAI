@@ -73,9 +73,17 @@ export function AnswerPanel({
       stage === "reading" ||
       stage === "analyzing" ||
       stage === "synthesizing");
+  const extractive = /Extractive brief/i.test(answer);
 
   if (stage === "error" && error) {
-    return <ErrorState description={error} onRetry={onRetry} />;
+    const title = /TAVILY_API_KEY|OPENAI_API_KEY|Live research requires|providers are not ready/i.test(
+      error,
+    )
+      ? "Providers not configured"
+      : /credits|billing|quota|credit balance/i.test(error)
+        ? "Model billing required"
+        : "Something went wrong";
+    return <ErrorState title={title} description={error} onRetry={onRetry} />;
   }
 
   return (
@@ -88,10 +96,12 @@ export function AnswerPanel({
             </div>
             <div>
               <h2 className="font-display text-lg tracking-tight text-ink sm:text-xl">
-                Synthesis
+                {extractive ? "Evidence brief" : "Synthesis"}
               </h2>
               <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-ink-faint">
-                AI-composed brief · click a citation to inspect it
+                {extractive
+                  ? "Live sources · extractive (model billing paused)"
+                  : "AI-composed brief · click a citation to inspect it"}
               </p>
             </div>
           </div>

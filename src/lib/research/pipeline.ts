@@ -21,6 +21,10 @@ import { createSerperProvider } from "@/lib/providers/search/serper";
 import { createTavilyProvider } from "@/lib/providers/search/tavily";
 import type { SearchProvider } from "@/lib/providers/search/types";
 import {
+  buildExtractiveBrief,
+  isLlmBillingFailure,
+} from "@/lib/research/extractive";
+import {
   buildFollowUpPrompt,
   buildSystemPrompt,
   buildUserPrompt,
@@ -172,16 +176,34 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
     const blocker =
       credentialsBlockerMessage(config) ??
       "Live providers are not configured.";
-    await emit({
-      type: "meta",
-      sessionId,
-      demoMode: true,
-      liveReady: false,
-      searchProvider: config.searchProvider,
-      llmProvider: config.llmProvider,
-      missingCredentials: config.missingCredentials,
-    });
-    await reportError(blocker);
+    // Still open a Failproof session so credential blocks produce real Cloud events.
+    try {
+      await withResearchSession(
+        {
+          sessionId,
+          query: input.query,
+          mode: input.mode,
+          protection: input.protection ?? "protected",
+          history: input.history,
+        },
+        async (trace) => {
+          await emit({
+            type: "meta",
+            sessionId,
+            demoMode: true,
+            liveReady: false,
+            searchProvider: config.searchProvider,
+            llmProvider: config.llmProvider,
+            missingCredentials: config.missingCredentials,
+          });
+          trace.noteFailure("CredentialsMissing", blocker, false);
+          await reportError(blocker);
+          throw new Error(blocker);
+        },
+      );
+    } catch {
+      // reportError already streamed the user-facing failure.
+    }
     return;
   }
 
@@ -309,6 +331,7 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
               );
             }
             let lastError: Error | null = null;
+            const modelFailures: string[] = [];
             for (const provider of providers) {
               try {
                 if (provider.name === "mock") {
@@ -366,6 +389,7 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
                 if (error instanceof PolicyDenied) throw error;
                 lastError =
                   error instanceof Error ? error : new Error(String(error));
+                modelFailures.push(`${provider.name}: ${lastError.message}`);
                 logger.warn("LLM provider failed; trying next fallback", {
                   provider: provider.name,
                   error: lastError.message,
@@ -381,7 +405,36 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
                 }
               }
             }
-            if (lastError) throw lastError;
+            if (lastError) {
+              const billingBlocked = modelFailures.every(isLlmBillingFailure);
+              if (billingBlocked && sources.length > 0) {
+                logger.warn(
+                  "LLM billing blocked synthesis; emitting extractive brief from live sources",
+                  { failures: modelFailures.length, sources: sources.length },
+                );
+                trace.noteRecovery(
+                  usedLlm || "llm",
+                  "extractive",
+                  "Model billing/quota blocked synthesis; using extractive brief from live sources.",
+                );
+                const text = buildExtractiveBrief(
+                  input.query,
+                  sources,
+                  input.mode,
+                  modelFailures,
+                );
+                await streamText(emit, sessionId, text, 3);
+                answer = text;
+                usedLlm = "extractive";
+                lastError = null;
+              } else {
+                throw new Error(
+                  modelFailures.length > 1
+                    ? `All LLM providers failed. ${modelFailures.join(" | ")}`
+                    : lastError.message,
+                );
+              }
+            }
           });
 
           if (!answer.trim()) {
@@ -446,7 +499,10 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
             type: "meta",
             sessionId,
             demoMode: demoSynthesis || usedSearch === "mock" || usedLlm === "mock",
-            liveReady: usedSearch !== "mock" && usedLlm !== "mock",
+            liveReady:
+              usedSearch !== "mock" &&
+              usedLlm !== "mock" &&
+              usedLlm !== "extractive",
             searchProvider: usedSearch,
             llmProvider: usedLlm,
             missingCredentials: config.missingCredentials,

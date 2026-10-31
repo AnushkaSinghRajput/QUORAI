@@ -36,7 +36,20 @@ export function createAnthropicProvider(
       });
 
       if (!response.ok || !response.body) {
-        throw new Error(`Anthropic request failed (${response.status})`);
+        let detail = "";
+        try {
+          const body = (await response.json()) as {
+            error?: { message?: string; type?: string };
+          };
+          detail = body.error?.message ?? body.error?.type ?? "";
+        } catch {
+          detail = "";
+        }
+        throw new Error(
+          detail
+            ? `Anthropic request failed (${response.status}): ${detail}`
+            : `Anthropic request failed (${response.status})`,
+        );
       }
 
       const reader = response.body.getReader();
