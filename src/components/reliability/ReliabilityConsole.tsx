@@ -179,8 +179,10 @@ export function ReliabilityConsole() {
                   → Administration → Keys
                 </li>
                 <li>
-                  Mint an organization key with <code className="font-mono text-xs">events:add</code>{" "}
-                  and <code className="font-mono text-xs">events:read</code>
+                  Mint an organization key with <code className="font-mono text-xs">events:add</code>.
+                  Add <code className="font-mono text-xs">events:read</code> on the same key
+                  (dashboard; human session) or set{" "}
+                  <code className="font-mono text-xs">FAILPROOFAI_READ_API_KEY</code>
                 </li>
                 <li>
                   Set <code className="font-mono text-xs">FAILPROOFAI_API_KEY</code> in Vercel

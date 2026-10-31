@@ -10,7 +10,15 @@ interface HealthPayload {
   allowMockFallback?: boolean;
   providers?: { search: string; llm: string };
   missingCredentials?: string[];
-  failproof?: { configured: boolean };
+  failproof?: {
+    configured: boolean;
+    readKeyConfigured?: boolean;
+    capabilities?: {
+      eventsAdd: boolean | null;
+      eventsRead: boolean | null;
+      message?: string;
+    };
+  };
 }
 
 export function ProviderStatus() {
@@ -18,7 +26,7 @@ export function ProviderStatus() {
 
   useEffect(() => {
     let cancelled = false;
-    void fetch("/api/health", { cache: "no-store" })
+    void fetch("/api/health?failproof=1", { cache: "no-store" })
       .then(async (response) => {
         const body = (await response.json()) as HealthPayload;
         if (!cancelled) setHealth(body);
@@ -59,7 +67,9 @@ export function ProviderStatus() {
           <p className="mt-1 text-xs text-ink-soft">
             {live
               ? health.failproof?.configured
-                ? "Failproof Cloud is connected for runtime traces."
+                ? health.failproof.capabilities?.eventsRead === false
+                  ? "Failproof can ship events, but events:read is missing for Cloud verify. Add the grant or FAILPROOFAI_READ_API_KEY."
+                  : "Failproof Cloud is connected for runtime traces."
                 : "Add FAILPROOFAI_API_KEY to ship traces to the quoraai workspace."
               : health.allowMockFallback
                 ? "Demo fallback is enabled. Answers will be labeled as demo, not live research."
