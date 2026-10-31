@@ -16,6 +16,21 @@ function env(key: string): string | undefined {
   return value && value.trim().length > 0 ? value.trim() : undefined;
 }
 
+/** Reject template placeholders so they are never treated as live credentials. */
+function liveSecret(key: string): string | undefined {
+  const value = env(key);
+  if (!value) return undefined;
+  if (
+    /^(your_|change-me|changeme|xxx+|todo|placeholder|example|replace)/i.test(
+      value,
+    ) ||
+    /your_[a-z0-9_]+_key/i.test(value)
+  ) {
+    return undefined;
+  }
+  return value;
+}
+
 function environmentLabel(): string {
   const override = env("FAILPROOFAI_ENVIRONMENT");
   const label =
@@ -51,11 +66,12 @@ export function failproofApiBase(): string {
 }
 
 export function getFailproofConfig() {
-  const apiKey = env("FAILPROOFAI_API_KEY");
+  const apiKey = liveSecret("FAILPROOFAI_API_KEY");
   const captureRaw = env("FAILPROOFAI_CAPTURE_CONTENT");
   return {
     apiKey,
     configured: Boolean(apiKey),
+    // Set only for instance-scoped keys. Org-scoped keys reject X-AgentEye-Org.
     org: env("FAILPROOFAI_ORG"),
     apiBase: failproofApiBase(),
     environment: environmentLabel(),
