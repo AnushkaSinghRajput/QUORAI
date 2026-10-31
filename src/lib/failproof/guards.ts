@@ -335,8 +335,11 @@ export function inspectEvidence(
     .filter((line) => line.length > 40 && !line.startsWith("#"));
   const uncitedClaims = claimLines.filter((line) => !/\[\d+\]/.test(line)).length;
   const weakClaims = claimLines.filter((line) => {
-    if (!/\[\d+\]/.test(line)) return false;
-    const numbers = (line.match(/\d+/g) ?? []).map(Number);
+    const markers = line.match(/\[\d+(?:\s*,\s*\d+)*\]/g) ?? [];
+    if (markers.length === 0) return false;
+    const numbers = markers.flatMap((marker) =>
+      (marker.match(/\d+/g) ?? []).map(Number),
+    );
     return numbers.some((number) => number < 1 || number > sources.length);
   }).length;
 

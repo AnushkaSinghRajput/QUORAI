@@ -92,6 +92,23 @@ describe("failproof guards", () => {
     assert.equal(result.decision.action, "allow");
   });
 
+  it("does not treat years as citation numbers", () => {
+    const result = inspectEvidence(
+      "Global solar capacity reached 2,200 GW in 2025, growing 29% year over year [1].",
+      [
+        {
+          title: "Solar Energy Market Report 2026",
+          url: "https://example.com/solar",
+          domain: "example.com",
+          credibility: "high",
+        },
+      ],
+      true,
+    );
+    assert.equal(result.decision.action, "allow");
+    assert.equal(result.weakClaims ?? 0, 0);
+  });
+
   it("detects repeated questions", () => {
     const decision = inspectQuestionLoop("What is RAG?", [
       { role: "user", content: "What is RAG?" },
