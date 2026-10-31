@@ -1,3 +1,4 @@
+import { analyzeCsv, isCsvFile } from "@/lib/csv";
 import { contentTokens } from "@/lib/text-match";
 import type { ResearchMode, Source } from "@/lib/types";
 
@@ -57,15 +58,42 @@ function chunk(text: string): string[] {
     }
   }
   if (buffer.trim().length > 40) chunks.push(buffer);
+  if (chunks.length === 0 && text.trim().length > 0) {
+    chunks.push(text.trim().slice(0, PASSAGE_CHARS));
+  }
   return chunks;
 }
 
 function passagesFor(files: DocumentInput[]): Passage[] {
   const passages: Passage[] = [];
   for (const file of files) {
-    for (const page of splitPages(file.text)) {
-      for (const text of chunk(page.text)) {
-        passages.push({ file: file.name, page: page.page, text, order: passages.length });
+    if (isCsvFile(file.name)) {
+      const analysis = analyzeCsv(file.name, file.text);
+      passages.push({
+        file: file.name,
+        text: `${analysis.evidenceSnippet}\n${analysis.keyInsights.join("\n")}`,
+        order: passages.length,
+      });
+      if (analysis.sampleRows.length > 0) {
+        passages.push({
+          file: file.name,
+          text: `Sample preview rows from ${file.name}:\n${JSON.stringify(analysis.sampleRows.slice(0, 3), null, 2)}`,
+          order: passages.length,
+        });
+      }
+      continue;
+    }
+
+    const pages = splitPages(file.text);
+    if (pages.length === 0 && file.text.trim().length > 0) {
+      for (const text of chunk(file.text)) {
+        passages.push({ file: file.name, text, order: passages.length });
+      }
+    } else {
+      for (const page of pages) {
+        for (const text of chunk(page.text)) {
+          passages.push({ file: file.name, page: page.page, text, order: passages.length });
+        }
       }
     }
   }

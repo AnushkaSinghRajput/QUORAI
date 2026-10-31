@@ -10,6 +10,7 @@ import {
 import { logger } from "@/lib/logger";
 import { buildMockAnswer, buildMockFollowUps } from "@/lib/mock/data";
 import { createAnthropicProvider } from "@/lib/providers/llm/anthropic";
+import { createGeminiProvider } from "@/lib/providers/llm/gemini";
 import { getLlmProvider } from "@/lib/providers/llm";
 import { createMockLlmProvider } from "@/lib/providers/llm/mock";
 import { createOpenAIProvider } from "@/lib/providers/llm/openai";
@@ -133,6 +134,12 @@ function llmChain(config: ReturnType<typeof getAppConfig>): LlmProvider[] {
     chain.push(
       createAnthropicProvider(config.keys.anthropic, config.models.anthropic),
     );
+  }
+  if (
+    config.keys.gemini &&
+    !chain.some((provider) => provider.name === "gemini")
+  ) {
+    chain.push(createGeminiProvider(config.keys.gemini, config.models.gemini));
   }
   if (
     config.keys.openai &&
@@ -320,7 +327,7 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
                       const text = [
                         "> **Demo mode** — this brief used mock synthesis, not a live model.",
                         "",
-                        buildMockAnswer(input.query, sources, input.mode),
+                        buildMockAnswer(input.query, sources, input.mode, input.attachments),
                       ].join("\n");
                       await streamText(emit, sessionId, text, 4);
                       return { text, model: "mock", stopReason: "stop" };
@@ -335,7 +342,9 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
                 const modelName =
                   provider.name === "anthropic"
                     ? config.models.anthropic
-                    : config.models.openai;
+                    : provider.name === "gemini"
+                      ? config.models.gemini
+                      : config.models.openai;
                 const completion = await completeModel(
                   trace,
                   "synthesis",
@@ -390,12 +399,14 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
             if (!provider) {
               followUps = [];
             } else if (provider.name === "mock") {
-              followUps = buildMockFollowUps(input.query);
+              followUps = buildMockFollowUps(input.query, input.attachments);
             } else {
               const modelName =
                 provider.name === "anthropic"
                   ? config.models.anthropic
-                  : config.models.openai;
+                  : provider.name === "gemini"
+                    ? config.models.gemini
+                    : config.models.openai;
               const prompted = await completeModel(
                 trace,
                 "followups",
@@ -426,7 +437,7 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
             });
             trace.noteFailure("ModelError", message, true);
             followUps = config.allowMockFallback
-              ? buildMockFollowUps(input.query)
+              ? buildMockFollowUps(input.query, input.attachments)
               : [];
           }
 

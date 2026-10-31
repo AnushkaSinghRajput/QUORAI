@@ -16,9 +16,16 @@ const HIGH_DOMAINS = new Set([
   "wsj.com",
   "nytimes.com",
   "economist.com",
+  "bloomberg.com",
+  "statista.com",
+  "gartner.com",
+  "mckinsey.com",
+  "hbr.org",
   "wikipedia.org",
   "jstor.org",
   "ssrn.com",
+  "ieee.org",
+  "acm.org",
 ]);
 
 function normalizeUrl(url: string) {

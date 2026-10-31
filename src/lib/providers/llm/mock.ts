@@ -1,6 +1,7 @@
 import {
   buildMockAnswer,
   buildMockFollowUps,
+  getMockSources,
 } from "@/lib/mock/data";
 import type { LlmProvider } from "@/lib/providers/llm/types";
 import { sleep } from "@/lib/utils";
@@ -17,32 +18,33 @@ export function createMockLlmProvider(): LlmProvider {
       const user =
         [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
       const query =
-        user.match(/User query:\s*(.+)/)?.[1]?.trim() || "your topic";
+        user.match(/User query:\s*([^\n]+)/)?.[1]?.trim() || "your topic";
       const mode = user.includes("deep research") ? "deep" : "quick";
-      const answer = buildMockAnswer(
-        query,
-        [
-          {
-            id: "1",
-            title: "Primary reference",
-            url: "https://example.com",
-            domain: "example.com",
-            snippet: "Demo snippet used for offline synthesis.",
-            relevance: 0.9,
-            credibility: "high",
-          },
-        ],
-        mode,
+
+      const attachments: Array<{ name: string; text: string }> = [];
+      const fileMatch = user.match(
+        /File \d+:\s*([^\n]+)\n([\s\S]*?)(?=(?:File \d+:|User query:|$))/g,
       );
+      if (fileMatch) {
+        for (const block of fileMatch) {
+          const m = block.match(/File \d+:\s*([^\n]+)\n([\s\S]*)/);
+          if (m) {
+            attachments.push({ name: m[1].trim(), text: m[2].trim() });
+          }
+        }
+      }
+
+      const sources = getMockSources(query, mode === "deep" ? 8 : 4);
+      const answer = buildMockAnswer(query, sources, mode, attachments);
 
       for (const chunk of answer.split(/(\s+)/)) {
         await onToken(chunk);
-        await sleep(10);
+        await sleep(6);
       }
       return { text: answer, model: "mock", stopReason: "stop" };
     },
     async suggestFollowUps(query) {
-      await sleep(200);
+      await sleep(150);
       return { followUps: buildMockFollowUps(query), model: "mock", stopReason: "stop" };
     },
   };

@@ -1,5 +1,5 @@
 export type SearchProviderName = "mock" | "tavily" | "serper";
-export type LlmProviderName = "mock" | "openai" | "anthropic";
+export type LlmProviderName = "mock" | "openai" | "anthropic" | "gemini";
 
 function env(key: string): string | undefined {
   const value = process.env[key];
@@ -35,6 +35,7 @@ export function getAppConfig() {
   const serperKey = liveSecret("SERPER_API_KEY");
   const openaiKey = liveSecret("OPENAI_API_KEY");
   const anthropicKey = liveSecret("ANTHROPIC_API_KEY");
+  const geminiKey = liveSecret("GEMINI_API_KEY") || liveSecret("GOOGLE_API_KEY");
   const failproofKey = liveSecret("FAILPROOFAI_API_KEY");
 
   const preferredSearch = (env("SEARCH_PROVIDER") ?? "tavily") as
@@ -90,13 +91,18 @@ export function getAppConfig() {
   let llmProvider: LlmProviderName = "mock";
   if (preferredLlm === "mock") {
     llmProvider = "mock";
+  } else if (preferredLlm === "gemini" && geminiKey) {
+    llmProvider = "gemini";
   } else if (preferredLlm === "openai" && openaiKey) {
     llmProvider = "openai";
   } else if (preferredLlm === "anthropic" && anthropicKey) {
     llmProvider = "anthropic";
   } else if (preferredLlm === "auto") {
-    if (openaiKey) llmProvider = "openai";
+    if (geminiKey) llmProvider = "gemini";
+    else if (openaiKey) llmProvider = "openai";
     else if (anthropicKey) llmProvider = "anthropic";
+  } else if (geminiKey) {
+    llmProvider = "gemini";
   } else if (openaiKey) {
     llmProvider = "openai";
   } else if (anthropicKey) {
@@ -121,7 +127,7 @@ export function getAppConfig() {
   const allowMockFallback =
     preferredSearch === "mock" ||
     preferredLlm === "mock" ||
-    flag("ALLOW_MOCK_FALLBACK", false);
+    flag("ALLOW_MOCK_FALLBACK", true);
 
   const demoMode = !liveReady;
 
@@ -142,6 +148,7 @@ export function getAppConfig() {
       serper: Boolean(serperKey),
       openai: Boolean(openaiKey),
       anthropic: Boolean(anthropicKey),
+      gemini: Boolean(geminiKey),
       failproof: Boolean(failproofKey),
       authSecret: Boolean(liveSecret("AUTH_SECRET")),
     },
@@ -152,10 +159,12 @@ export function getAppConfig() {
       serper: serperKey,
       openai: openaiKey,
       anthropic: anthropicKey,
+      gemini: geminiKey,
     },
     models: {
       openai: env("OPENAI_MODEL") ?? "gpt-4o-mini",
       anthropic: env("ANTHROPIC_MODEL") ?? "claude-3-5-haiku-latest",
+      gemini: env("GEMINI_MODEL") ?? "gemini-2.5-flash",
     },
   };
 }
@@ -169,8 +178,10 @@ export function credentialsBlockerMessage(config: AppConfig = getAppConfig()) {
       ? "TAVILY_API_KEY"
       : null,
     !config.providerCredentials.openai &&
+    !config.providerCredentials.gemini &&
+    !config.providerCredentials.anthropic &&
     (config.preferredLlm === "openai" || config.preferredLlm === "auto")
-      ? "OPENAI_API_KEY"
+      ? "OPENAI_API_KEY (or GEMINI_API_KEY)"
       : null,
   ].filter(Boolean) as string[];
 
