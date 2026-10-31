@@ -1,4 +1,5 @@
 import { countUsers } from "@/lib/auth/store";
+import { probeFailproofCapabilities } from "@/lib/failproof/capabilities";
 import { publicFailproofStatus } from "@/lib/failproof/store";
 import { getAppConfig } from "@/lib/config";
 import { jsonResponse } from "@/lib/http";
@@ -7,9 +8,13 @@ import { persistenceMode } from "@/lib/persist";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   const config = getAppConfig();
   const users = await countUsers();
+  const probe =
+    new URL(request.url).searchParams.get("failproof") === "1"
+      ? await probeFailproofCapabilities()
+      : undefined;
 
   return jsonResponse({
     ok: true,
@@ -37,6 +42,9 @@ export async function GET() {
       users,
       secretConfigured: config.providerCredentials.authSecret,
     },
-    failproof: publicFailproofStatus(),
+    failproof: {
+      ...publicFailproofStatus(),
+      ...(probe ? { capabilities: probe } : {}),
+    },
   });
 }

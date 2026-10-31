@@ -67,9 +67,13 @@ export function failproofApiBase(): string {
 
 export function getFailproofConfig() {
   const apiKey = liveSecret("FAILPROOFAI_API_KEY");
+  // Optional dedicated reader. Prefer this for GET /v1/events when the ship key
+  // only has events:add (keys:update is human-session only in Failproof Cloud).
+  const readApiKey = liveSecret("FAILPROOFAI_READ_API_KEY");
   const captureRaw = env("FAILPROOFAI_CAPTURE_CONTENT");
   return {
     apiKey,
+    readApiKey,
     configured: Boolean(apiKey),
     // Set only for instance-scoped keys. Org-scoped keys reject X-AgentEye-Org.
     org: env("FAILPROOFAI_ORG"),
@@ -91,6 +95,6 @@ export function failproofRequirements(): string[] {
   const config = getFailproofConfig();
   if (config.configured) return [];
   return [
-    "Set FAILPROOFAI_API_KEY in the server environment (.env.local locally). Mint an organization-scoped key inside the quoraai workspace at Administration → Keys. The ingest path needs events:add. The reliability Verify action also needs events:read. An instance-scoped key additionally needs FAILPROOFAI_ORG=quoraai. The workspace URL is the dashboard, not the API.",
+    "Set FAILPROOFAI_API_KEY in the server environment (.env.local locally). Mint an organization-scoped key inside the quoraai workspace at Administration → Keys with events:add. For Cloud verify, add events:read on that key (dashboard; keys:update is human-session only) or set FAILPROOFAI_READ_API_KEY to a read-capable key. An instance-scoped key additionally needs FAILPROOFAI_ORG=quoraai. The workspace URL is the dashboard, not the API.",
   ];
 }

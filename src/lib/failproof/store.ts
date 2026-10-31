@@ -109,10 +109,11 @@ export function publicFailproofStatus() {
     agentId: config.agentId,
     captureContent: config.captureContent,
     orgHeader: Boolean(config.org),
+    readKeyConfigured: Boolean(config.readApiKey),
     missing: config.configured
       ? []
       : [
-          "FAILPROOFAI_API_KEY with events:add, minted in the quoraai organization. Add events:read to verify traces. Set FAILPROOFAI_ORG=quoraai only for an instance-scoped key.",
+          "FAILPROOFAI_API_KEY with events:add, minted in the quoraai organization. Add events:read to verify traces (or set FAILPROOFAI_READ_API_KEY). Set FAILPROOFAI_ORG=quoraai only for an instance-scoped key.",
         ],
   };
 }
