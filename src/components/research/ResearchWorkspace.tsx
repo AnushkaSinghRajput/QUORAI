@@ -210,15 +210,6 @@ export function ResearchWorkspace({
             </Link>
           </div>
         </div>
-        {session.demoMode && (
-          <div className="mb-5 rounded-2xl border border-danger/30 bg-danger-soft px-4 py-3 text-sm text-ink">
-            This brief used demo providers. It is not live web research. Add
-            <code className="mx-1 font-mono text-xs">TAVILY_API_KEY</code> and
-            <code className="mx-1 font-mono text-xs">OPENAI_API_KEY</code>
-            for production answers.
-          </div>
-        )}
-
         <div className="mb-6 max-w-3xl">
           <p className="section-label">Active brief</p>
           <h1 className="mt-2 font-display text-3xl font-semibold leading-tight tracking-[-0.04em] text-ink sm:text-4xl">
