@@ -18,14 +18,24 @@ export async function GET() {
     time: new Date().toISOString(),
     persistence: persistenceMode(),
     demoMode: config.demoMode,
+    liveReady: config.liveReady,
+    allowMockFallback: config.allowMockFallback,
+    missingCredentials: config.missingCredentials,
+    providerCredentials: config.providerCredentials,
+    preferred: {
+      search: config.preferredSearch,
+      llm: config.preferredLlm,
+    },
     providers: {
       search: config.searchProvider,
       llm: config.llmProvider,
+      searchFallback: config.searchFallback,
+      llmFallback: config.llmFallback,
       models: config.models,
     },
     auth: {
       users,
-      secretConfigured: Boolean(process.env.AUTH_SECRET?.trim()),
+      secretConfigured: config.providerCredentials.authSecret,
     },
     failproof: publicFailproofStatus(),
   });

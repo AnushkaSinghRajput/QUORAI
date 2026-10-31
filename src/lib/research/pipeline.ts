@@ -1,15 +1,29 @@
 import { nanoid } from "nanoid";
-import { getAppConfig } from "@/lib/config";
+import { credentialsBlockerMessage, getAppConfig } from "@/lib/config";
 import { buildDocumentEvidence, documentHint } from "@/lib/documents";
 import { PolicyDenied, redactSecrets } from "@/lib/failproof/guards";
-import { withResearchSession, type ModelCallResult, type ResearchTrace } from "@/lib/failproof/trace";
+import {
+  withResearchSession,
+  type ModelCallResult,
+  type ResearchTrace,
+} from "@/lib/failproof/trace";
 import { logger } from "@/lib/logger";
 import { buildMockAnswer, buildMockFollowUps } from "@/lib/mock/data";
+import { createAnthropicProvider } from "@/lib/providers/llm/anthropic";
 import { getLlmProvider } from "@/lib/providers/llm";
-import type { LlmMessage } from "@/lib/providers/llm/types";
-import { createMockSearchProvider } from "@/lib/providers/search/mock";
+import { createMockLlmProvider } from "@/lib/providers/llm/mock";
+import { createOpenAIProvider } from "@/lib/providers/llm/openai";
+import type { LlmMessage, LlmProvider } from "@/lib/providers/llm/types";
 import { getSearchProvider } from "@/lib/providers/search";
-import { buildFollowUpPrompt, buildSystemPrompt, buildUserPrompt } from "@/lib/research/prompts";
+import { createMockSearchProvider } from "@/lib/providers/search/mock";
+import { createSerperProvider } from "@/lib/providers/search/serper";
+import { createTavilyProvider } from "@/lib/providers/search/tavily";
+import type { SearchProvider } from "@/lib/providers/search/types";
+import {
+  buildFollowUpPrompt,
+  buildSystemPrompt,
+  buildUserPrompt,
+} from "@/lib/research/prompts";
 import type { ResearchMode, ResearchStage, Source, StreamEvent } from "@/lib/types";
 import { rankSources } from "@/lib/sources";
 import { sleep } from "@/lib/utils";
@@ -29,7 +43,12 @@ async function emitStage(emit: Emit, stage: ResearchStage, sessionId: string) {
   await emit({ type: "stage", stage, sessionId });
 }
 
-async function streamText(emit: Emit, sessionId: string, text: string, delayMs = 12) {
+async function streamText(
+  emit: Emit,
+  sessionId: string,
+  text: string,
+  delayMs = 12,
+) {
   const chunks = text.split(/(\s+)/);
   for (const chunk of chunks) {
     await emit({ type: "token", token: chunk, sessionId });
@@ -83,13 +102,56 @@ async function completeModel(
   return trace.model(purpose, model, outbound, () => run(outbound));
 }
 
+function searchChain(config: ReturnType<typeof getAppConfig>): SearchProvider[] {
+  const chain: SearchProvider[] = [];
+  const primary = getSearchProvider();
+  if (primary.name !== "mock") chain.push(primary);
+  if (
+    config.keys.serper &&
+    !chain.some((provider) => provider.name === "serper")
+  ) {
+    chain.push(createSerperProvider(config.keys.serper));
+  }
+  if (
+    config.keys.tavily &&
+    !chain.some((provider) => provider.name === "tavily")
+  ) {
+    chain.push(createTavilyProvider(config.keys.tavily));
+  }
+  if (config.allowMockFallback) chain.push(createMockSearchProvider());
+  return chain;
+}
+
+function llmChain(config: ReturnType<typeof getAppConfig>): LlmProvider[] {
+  const chain: LlmProvider[] = [];
+  const primary = getLlmProvider();
+  if (primary.name !== "mock") chain.push(primary);
+  if (
+    config.keys.anthropic &&
+    !chain.some((provider) => provider.name === "anthropic")
+  ) {
+    chain.push(
+      createAnthropicProvider(config.keys.anthropic, config.models.anthropic),
+    );
+  }
+  if (
+    config.keys.openai &&
+    !chain.some((provider) => provider.name === "openai")
+  ) {
+    chain.push(createOpenAIProvider(config.keys.openai, config.models.openai));
+  }
+  if (config.allowMockFallback) chain.push(createMockLlmProvider());
+  return chain;
+}
+
 export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
   const sessionId = input.sessionId || nanoid(12);
   const config = getAppConfig();
-  const search = getSearchProvider();
-  const llm = getLlmProvider();
   const maxResults = input.mode === "deep" ? 10 : 5;
   let reported = false;
+  let usedSearch = "none";
+  let usedLlm = "none";
+  let demoSynthesis = false;
 
   const reportError = async (message: string) => {
     if (reported) return;
@@ -98,6 +160,23 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
     await emit({ type: "error", error: message, sessionId });
     await emit({ type: "stage", stage: "error", sessionId });
   };
+
+  if (!config.liveReady && !config.allowMockFallback) {
+    const blocker =
+      credentialsBlockerMessage(config) ??
+      "Live providers are not configured.";
+    await emit({
+      type: "meta",
+      sessionId,
+      demoMode: true,
+      liveReady: false,
+      searchProvider: config.searchProvider,
+      llmProvider: config.llmProvider,
+      missingCredentials: config.missingCredentials,
+    });
+    await reportError(blocker);
+    return;
+  }
 
   try {
     await withResearchSession(
@@ -110,6 +189,15 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
       },
       async (trace) => {
         try {
+          await emit({
+            type: "meta",
+            sessionId,
+            demoMode: config.demoMode,
+            liveReady: config.liveReady,
+            searchProvider: config.searchProvider,
+            llmProvider: config.llmProvider,
+            missingCredentials: config.missingCredentials,
+          });
           await emitStage(emit, "searching", sessionId);
 
           let sources: Source[] = [];
@@ -125,35 +213,47 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
             .trim();
 
           await trace.stage("searching", async () => {
-            try {
-              sources = await searchSources(
-                trace,
-                searchQuery,
-                search.name,
-                maxResults + 3,
-                (query) => search.search(query, maxResults + 3),
-              );
-            } catch (error) {
-              if (error instanceof PolicyDenied) throw error;
-              const message = error instanceof Error ? error.message : String(error);
-              logger.warn("Search provider failed; falling back to mock", {
-                provider: config.searchProvider,
-                error: message,
-              });
-              trace.noteFailure("SearchError", message, true);
-              trace.noteRecovery(
-                search.name,
-                "mock",
-                "Primary search failed, so retrieval continued with the mock provider.",
-              );
-              sources = await searchSources(
-                trace,
-                input.query,
-                "mock",
-                maxResults + 3,
-                (query) => createMockSearchProvider().search(query, maxResults + 3),
+            const providers = searchChain(config);
+            if (providers.length === 0) {
+              throw new Error(
+                credentialsBlockerMessage(config) ??
+                  "No search provider is available.",
               );
             }
+            let lastError: Error | null = null;
+            for (const provider of providers) {
+              try {
+                sources = await searchSources(
+                  trace,
+                  searchQuery,
+                  provider.name,
+                  maxResults + 3,
+                  (query) => provider.search(query, maxResults + 3),
+                );
+                usedSearch = provider.name;
+                if (provider.name === "mock") demoSynthesis = true;
+                lastError = null;
+                break;
+              } catch (error) {
+                if (error instanceof PolicyDenied) throw error;
+                lastError =
+                  error instanceof Error ? error : new Error(String(error));
+                logger.warn("Search provider failed; trying next fallback", {
+                  provider: provider.name,
+                  error: lastError.message,
+                });
+                trace.noteFailure("SearchError", lastError.message, true);
+                const next = providers[providers.indexOf(provider) + 1];
+                if (next) {
+                  trace.noteRecovery(
+                    provider.name,
+                    next.name,
+                    `Search via ${provider.name} failed; trying ${next.name}.`,
+                  );
+                }
+              }
+            }
+            if (lastError) throw lastError;
           });
 
           sources = rankSources(sources, maxResults);
@@ -194,63 +294,85 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
 
           let answer = "";
           await trace.stage("synthesizing", async () => {
-            if (llm.name === "mock") {
-              const completion = await completeModel(
-                trace,
-                "synthesis",
-                "mock",
-                messages,
-                async () => {
-                  const text = buildMockAnswer(input.query, sources, input.mode);
-                  await streamText(emit, sessionId, text, 4);
-                  return { text, model: "mock", stopReason: "stop" };
-                },
+            const providers = llmChain(config);
+            if (providers.length === 0) {
+              throw new Error(
+                credentialsBlockerMessage(config) ??
+                  "No LLM provider is available.",
               );
-              answer = completion.text;
-              return;
             }
-
-            try {
-              const completion = await completeModel(
-                trace,
-                "synthesis",
-                config.models[llm.name === "anthropic" ? "anthropic" : "openai"],
-                messages,
-                (outbound) =>
-                  llm.stream({
-                    messages: outbound,
-                    onToken: async (token) => {
-                      await emit({ type: "token", token, sessionId });
+            let lastError: Error | null = null;
+            for (const provider of providers) {
+              try {
+                if (provider.name === "mock") {
+                  if (!config.allowMockFallback) {
+                    throw new Error(
+                      "Mock synthesis is disabled. Configure OPENAI_API_KEY (or ANTHROPIC_API_KEY).",
+                    );
+                  }
+                  demoSynthesis = true;
+                  const completion = await completeModel(
+                    trace,
+                    "synthesis",
+                    "mock",
+                    messages,
+                    async () => {
+                      const text = [
+                        "> **Demo mode** — this brief used mock synthesis, not a live model.",
+                        "",
+                        buildMockAnswer(input.query, sources, input.mode),
+                      ].join("\n");
+                      await streamText(emit, sessionId, text, 4);
+                      return { text, model: "mock", stopReason: "stop" };
                     },
-                  }),
-              );
-              answer = completion.text;
-            } catch (error) {
-              if (error instanceof PolicyDenied) throw error;
-              const message = error instanceof Error ? error.message : String(error);
-              logger.warn("LLM provider failed; falling back to mock synthesis", {
-                provider: config.llmProvider,
-                error: message,
-              });
-              trace.noteFailure("ModelError", message, true);
-              trace.noteRecovery(
-                llm.name,
-                "mock",
-                "Primary model failed, so synthesis continued with demo text.",
-              );
-              const completion = await completeModel(
-                trace,
-                "synthesis",
-                "mock",
-                messages,
-                async () => {
-                  const text = buildMockAnswer(input.query, sources, input.mode);
-                  await streamText(emit, sessionId, text, 3);
-                  return { text, model: "mock", stopReason: "stop" };
-                },
-              );
-              answer = completion.text;
+                  );
+                  answer = completion.text;
+                  usedLlm = "mock";
+                  lastError = null;
+                  break;
+                }
+
+                const modelName =
+                  provider.name === "anthropic"
+                    ? config.models.anthropic
+                    : config.models.openai;
+                const completion = await completeModel(
+                  trace,
+                  "synthesis",
+                  modelName,
+                  messages,
+                  (outbound) =>
+                    provider.stream({
+                      messages: outbound,
+                      onToken: async (token) => {
+                        await emit({ type: "token", token, sessionId });
+                      },
+                    }),
+                );
+                answer = completion.text;
+                usedLlm = provider.name;
+                lastError = null;
+                break;
+              } catch (error) {
+                if (error instanceof PolicyDenied) throw error;
+                lastError =
+                  error instanceof Error ? error : new Error(String(error));
+                logger.warn("LLM provider failed; trying next fallback", {
+                  provider: provider.name,
+                  error: lastError.message,
+                });
+                trace.noteFailure("ModelError", lastError.message, true);
+                const next = providers[providers.indexOf(provider) + 1];
+                if (next) {
+                  trace.noteRecovery(
+                    provider.name,
+                    next.name,
+                    `Model ${provider.name} failed; trying ${next.name}.`,
+                  );
+                }
+              }
             }
+            if (lastError) throw lastError;
           });
 
           if (!answer.trim()) {
@@ -261,35 +383,29 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
 
           let followUps: string[] = [];
           try {
-            if (llm.name === "mock") {
-              const completion = await completeModel(
-                trace,
-                "followups",
-                "mock",
-                [{ role: "user", content: input.query }],
-                async () => ({
-                  text: buildMockFollowUps(input.query).join("\n"),
-                  model: "mock",
-                  stopReason: "stop",
-                }),
-              );
-              followUps = completion.text.split("\n").filter(Boolean);
+            const providers = llmChain(config).filter((provider) =>
+              demoSynthesis ? provider.name === "mock" : provider.name !== "mock",
+            );
+            const provider = providers[0] ?? (config.allowMockFallback ? createMockLlmProvider() : null);
+            if (!provider) {
+              followUps = [];
+            } else if (provider.name === "mock") {
+              followUps = buildMockFollowUps(input.query);
             } else {
               const modelName =
-                config.models[llm.name === "anthropic" ? "anthropic" : "openai"];
+                provider.name === "anthropic"
+                  ? config.models.anthropic
+                  : config.models.openai;
               const prompted = await completeModel(
                 trace,
                 "followups",
                 modelName,
                 [{ role: "user", content: buildFollowUpPrompt(input.query, answer) }],
-                async (outbound) => {
-                  const prompt = outbound[0]?.content ?? "";
-                  const result = prompt.includes("[redacted]")
-                    ? await llm.suggestFollowUps(
-                        redactSecrets(input.query).text,
-                        redactSecrets(answer).text,
-                      )
-                    : await llm.suggestFollowUps(input.query, answer);
+                async () => {
+                  const result = await provider.suggestFollowUps(
+                    input.query,
+                    answer,
+                  );
                   return {
                     text: result.followUps.join("\n"),
                     model: result.model ?? modelName,
@@ -303,18 +419,27 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
             }
           } catch (error) {
             if (error instanceof PolicyDenied) throw error;
-            const message = error instanceof Error ? error.message : String(error);
-            logger.warn("Follow-up generation failed; using defaults", { error: message });
+            const message =
+              error instanceof Error ? error.message : String(error);
+            logger.warn("Follow-up generation failed; using defaults", {
+              error: message,
+            });
             trace.noteFailure("ModelError", message, true);
-            trace.noteRecovery(
-              llm.name,
-              "mock",
-              "Follow-up generation failed, so the default questions were used.",
-            );
-            followUps = buildMockFollowUps(input.query);
+            followUps = config.allowMockFallback
+              ? buildMockFollowUps(input.query)
+              : [];
           }
 
           await emit({ type: "follow_ups", followUps, sessionId });
+          await emit({
+            type: "meta",
+            sessionId,
+            demoMode: demoSynthesis || usedSearch === "mock" || usedLlm === "mock",
+            liveReady: usedSearch !== "mock" && usedLlm !== "mock",
+            searchProvider: usedSearch,
+            llmProvider: usedLlm,
+            missingCredentials: config.missingCredentials,
+          });
           await emitStage(emit, "complete", sessionId);
           await emit({ type: "done", sessionId });
         } catch (error) {
