@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Team Phoenix competition brief PDF (3–4 pages)."""
+"""Generate Team Phoenix product brief PDF (3–4 pages)."""
 
 from pathlib import Path
 
@@ -143,7 +143,7 @@ def build():
         rightMargin=18 * mm,
         topMargin=16 * mm,
         bottomMargin=18 * mm,
-        title="QUORAI 2.0 — Team Phoenix Competition Brief",
+        title="QUORAI 2.0 — Team Phoenix Product Brief",
         author="Team Phoenix",
     )
     story = []
@@ -215,7 +215,7 @@ def build():
                 "<b>Live synthesis</b> — OpenAI as primary LLM (Anthropic optional fallback).",
                 "<b>Cited briefs</b> — ranked sources, citation confidence, PDF/text grounding.",
                 "<b>Failproof reliability</b> — runtime events shipped to the QuoraAI workspace.",
-                "<b>Protected vs unprotected demo</b> — genuine policy contrast for judges.",
+                "<b>Protected vs unprotected demo</b> — genuine policy contrast for stakeholders.",
                 "<b>Operator console</b> — /reliability metrics, decisions, Cloud verify.",
             ],
             s["bullet"],
@@ -267,7 +267,7 @@ def build():
     story.append(
         Paragraph(
             "The /demo flow runs the same query under protected and unprotected policies so "
-            "judges can see how reliability controls change outcomes using genuine execution "
+            "stakeholders can see how reliability controls change outcomes using genuine execution "
             "data — not screenshots of mocked traces.",
             s["body"],
         )
@@ -335,7 +335,7 @@ def build():
             [
                 "Clear module boundaries: providers/, research/, failproof/, auth/.",
                 "Shared list/research patterns, Zod validation, TypeScript throughout.",
-                "Documented env template, competition guide, and verification scripts.",
+                "Documented env template, product walkthrough, and verification scripts.",
             ],
             s["bullet"],
         )
@@ -352,7 +352,7 @@ def build():
         )
     )
 
-    story.append(Paragraph("6. Competition demo path", s["h1"]))
+    story.append(Paragraph("6. Stakeholder demo path", s["h1"]))
     story.append(
         bullets(
             [
@@ -378,7 +378,7 @@ def build():
         ],
         [
             "Vedant Gupta",
-            "Reliability storytelling, competition narrative, solution framing for real-world buyers",
+            "Reliability storytelling, product narrative, solution framing for real-world buyers",
         ],
     ]
     tt = Table(team, colWidths=[2.0 * inch, 4.2 * inch])

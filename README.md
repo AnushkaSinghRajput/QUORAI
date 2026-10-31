@@ -83,9 +83,9 @@ npm run verify:failproof   # needs FAILPROOFAI_API_KEY in env
 
 ---
 
-## Competition demo
+## Product walkthrough
 
-See [COMPETITION.md](./COMPETITION.md) for the judge walkthrough (`/demo`, `/reliability`, Failproof dashboard).
+See [docs/PRODUCT_WALKTHROUGH.md](./docs/PRODUCT_WALKTHROUGH.md) for the operator tour (`/demo`, `/reliability`, Failproof dashboard).
 
 ---
 
