@@ -1,5 +1,15 @@
 import type { Source } from "@/lib/types";
 import type { SynthesisContext } from "@/lib/providers/llm/types";
+import { PAGE_MARKER } from "@/lib/documents";
+
+const INLINE_ATTACHMENT_CHARS = 8_000;
+
+function stripPageMarkers(text: string) {
+  return text
+    .split("\n")
+    .filter((line) => !PAGE_MARKER.test(line.trim()))
+    .join("\n");
+}
 
 export function buildSystemPrompt(mode: "quick" | "deep"): string {
   if (mode === "deep") {
@@ -11,6 +21,7 @@ export function buildSystemPrompt(mode: "quick" | "deep"): string {
       "If sources disagree, say so. If evidence is thin, say what is unknown.",
       "Do not invent URLs, quotes, dates, or numbers.",
       "If the user uploaded files, treat them as primary evidence and check them against the live web.",
+      "When a claim comes from an uploaded document, cite its [n] and mention the page.",
     ].join(" ");
   }
 
@@ -26,9 +37,10 @@ export function buildSystemPrompt(mode: "quick" | "deep"): string {
 
 export function buildUserPrompt(ctx: SynthesisContext): string {
   const sourceBlock = ctx.sources
-    .map(
-      (source: Source, index: number) =>
-        `[${index + 1}] ${source.title}\nURL: ${source.url}\nCredibility: ${source.credibility} | Relevance: ${source.relevance}\nSnippet: ${source.snippet}`,
+    .map((source: Source, index: number) =>
+      source.kind === "document"
+        ? `[${index + 1}] Uploaded document "${source.documentName}"${source.page ? `, page ${source.page}` : ""}\nPassage: ${source.snippet}`
+        : `[${index + 1}] ${source.title}\nURL: ${source.url}\nCredibility: ${source.credibility} | Relevance: ${source.relevance}\nSnippet: ${source.snippet}`,
     )
     .join("\n\n");
 
@@ -39,12 +51,16 @@ export function buildUserPrompt(ctx: SynthesisContext): string {
           .join("\n")}\n`
       : "";
 
+  const inlineFiles =
+    (ctx.attachments ?? []).reduce((sum, file) => sum + file.text.length, 0) <=
+    INLINE_ATTACHMENT_CHARS;
   const attachmentBlock =
     ctx.attachments && ctx.attachments.length > 0
-      ? `\nUploaded files (treat as primary evidence; still cite the live web):\n${ctx.attachments
-          .map(
-            (file, index) =>
-              `File ${index + 1}: ${file.name}\n${file.text}`,
+      ? `\nUploaded files (primary evidence; their most relevant passages are listed in Sources as "Uploaded document" — cite those with [n] and check them against the live web):\n${ctx.attachments
+          .map((file, index) =>
+            inlineFiles
+              ? `File ${index + 1}: ${file.name}\n${stripPageMarkers(file.text)}`
+              : `File ${index + 1}: ${file.name}`,
           )
           .join("\n\n")}\n`
       : "";

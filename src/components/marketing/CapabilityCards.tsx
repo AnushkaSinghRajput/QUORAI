@@ -30,9 +30,9 @@ const CAPABILITIES = [
   },
   {
     icon: FileSearch,
-    title: "File-grounded",
-    body: "Drop notes, CSVs, or briefs. QUORAI treats them as primary evidence.",
-    tag: "Upload",
+    title: "PDF-grounded briefs",
+    body: "Drop a report. QUORAI extracts pages, cites passages with support probabilities, and opens the exact page from the evidence rail.",
+    tag: "PDF",
   },
 ] as const;
 

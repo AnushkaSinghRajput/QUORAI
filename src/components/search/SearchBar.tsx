@@ -1,7 +1,15 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ArrowUpRight, LoaderCircle, Paperclip, Upload, X, Zap } from "lucide-react";
+import {
+  ArrowUpRight,
+  FileText,
+  LoaderCircle,
+  Paperclip,
+  Upload,
+  X,
+  Zap,
+} from "lucide-react";
 import { ModeToggle } from "@/components/search/ModeToggle";
 import { Button } from "@/components/ui/Button";
 import {
@@ -33,6 +41,7 @@ export function SearchBar({
 }) {
   const [query, setQuery] = useState(initialQuery);
   const [files, setFiles] = useState<ResearchAttachment[]>([]);
+  const [parsing, setParsing] = useState<string[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -41,33 +50,43 @@ export function SearchBar({
 
   async function addFiles(list: FileList | File[]) {
     setFileError(null);
-    const incoming = Array.from(list);
-    const next = [...files];
-
-    for (const file of incoming) {
-      if (next.length >= MAX_ATTACHMENTS) {
-        setFileError(`You can attach up to ${MAX_ATTACHMENTS} files.`);
-        break;
-      }
-      if (next.some((item) => item.name === file.name)) {
-        continue;
-      }
-      try {
-        next.push(await readAttachment(file));
-      } catch (error) {
-        setFileError(
-          error instanceof Error ? error.message : "Could not read that file.",
-        );
-      }
+    const incoming = Array.from(list).filter(
+      (file) =>
+        !files.some((item) => item.name === file.name) &&
+        !parsing.includes(file.name),
+    );
+    const room = MAX_ATTACHMENTS - files.length - parsing.length;
+    if (incoming.length > room) {
+      setFileError(`You can attach up to ${MAX_ATTACHMENTS} files.`);
     }
-
-    setFiles(next.slice(0, MAX_ATTACHMENTS));
+    const accepted = incoming.slice(0, Math.max(0, room));
     if (fileRef.current) fileRef.current.value = "";
+    if (accepted.length === 0) return;
+
+    setParsing((current) => [...current, ...accepted.map((file) => file.name)]);
+    await Promise.all(
+      accepted.map(async (file) => {
+        try {
+          const attachment = await readAttachment(file);
+          setFiles((current) =>
+            current.some((item) => item.name === attachment.name)
+              ? current
+              : [...current, attachment].slice(0, MAX_ATTACHMENTS),
+          );
+        } catch (error) {
+          setFileError(
+            error instanceof Error ? error.message : "Could not read that file.",
+          );
+        } finally {
+          setParsing((current) => current.filter((name) => name !== file.name));
+        }
+      }),
+    );
   }
 
   function submit() {
     const trimmed = query.trim();
-    if (loading) return;
+    if (loading || parsing.length > 0) return;
     if (!trimmed && files.length === 0) return;
     onSubmit(
       trimmed || defaultQueryForAttachments(files),
@@ -75,14 +94,17 @@ export function SearchBar({
     );
   }
 
-  const canLaunch = !loading && (query.trim().length >= 2 || files.length > 0);
+  const canLaunch =
+    !loading &&
+    parsing.length === 0 &&
+    (query.trim().length >= 2 || files.length > 0);
 
   return (
     <div
       className={cn(
         "relative overflow-hidden rounded-[1.75rem] transition-all duration-300",
         compact ? "p-3" : "p-4 sm:p-5",
-        dragging && "ring-2 ring-rose/50",
+        dragging && "ring-2 ring-rose/50 scale-[1.01]",
         focused && "ring-2 ring-cyan/35 shadow-[0_0_48px_rgba(34,211,238,0.12)]",
       )}
       onDragOver={(event) => {
@@ -110,6 +132,18 @@ export function SearchBar({
       >
         <div className="h-full w-full rounded-[calc(1.75rem-1px)] bg-bg-elevated/95 backdrop-blur-xl" />
       </div>
+
+      {dragging && (
+        <div className="pointer-events-none absolute inset-3 z-10 grid place-items-center rounded-[1.35rem] border border-dashed border-rose/50 bg-rose/10 backdrop-blur-md">
+          <div className="text-center">
+            <FileText className="mx-auto h-8 w-8 text-rose" />
+            <p className="mt-2 font-display text-sm text-ink">Drop PDF to ground the brief</p>
+            <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint">
+              Text extracted · claims cited · pages linked
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="relative">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -140,22 +174,40 @@ export function SearchBar({
           placeholder={
             files.length
               ? "Ask about the attached file, or launch to analyze it."
-              : "Ask QUORAI anything, or drop a brief, notes, or CSV."
+              : "Ask QUORAI anything, or drop a PDF report, notes, or CSV."
           }
           aria-label="Research query"
           className="w-full resize-none bg-transparent font-display text-[1.05rem] leading-relaxed text-ink placeholder:text-ink-faint focus:outline-none sm:text-xl"
           disabled={loading}
         />
 
-        {files.length > 0 && (
+        {(files.length > 0 || parsing.length > 0) && (
           <ul className="mt-3 flex flex-wrap gap-2">
+            {parsing.map((name) => (
+              <li
+                key={`parsing-${name}`}
+                className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-cyan/25 bg-warm-soft px-2.5 py-1 text-xs text-ink-soft"
+              >
+                <LoaderCircle className="h-3 w-3 shrink-0 animate-spin text-cyan" />
+                <span className="truncate">Reading {name}…</span>
+              </li>
+            ))}
             {files.map((file) => (
               <li
                 key={file.name}
                 className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-white/15 bg-black/30 px-2.5 py-1 text-xs text-ink"
               >
-                <Paperclip className="h-3 w-3 shrink-0 text-rose" />
+                {file.pageCount ? (
+                  <FileText className="h-3 w-3 shrink-0 text-rose" />
+                ) : (
+                  <Paperclip className="h-3 w-3 shrink-0 text-rose" />
+                )}
                 <span className="truncate">{file.name}</span>
+                {file.pageCount ? (
+                  <span className="shrink-0 font-mono text-[10px] text-ink-faint">
+                    {file.pageCount} {file.pageCount === 1 ? "page" : "pages"}
+                  </span>
+                ) : null}
                 <button
                   type="button"
                   aria-label={`Remove ${file.name}`}
@@ -193,13 +245,17 @@ export function SearchBar({
               type="button"
               disabled={loading}
               onClick={() => fileRef.current?.click()}
-              className="inline-flex h-10 items-center gap-1.5 rounded-full border border-white/15 bg-black/25 px-3 text-sm text-ink-soft transition hover:border-accent/30 hover:text-ink disabled:opacity-50"
+              className="inline-flex h-10 items-center gap-1.5 rounded-full border border-rose/25 bg-rose/10 px-3 text-sm text-ink transition hover:border-rose/40 hover:bg-rose/15 disabled:opacity-50"
             >
-              <Upload className="h-4 w-4" />
-              Upload
+              <Upload className="h-4 w-4 text-rose" />
+              Upload PDF
             </button>
             <p className="hidden font-mono text-[10px] uppercase tracking-[0.16em] text-ink-faint sm:inline">
-              {dragging ? "Drop to attach" : "Enter to launch · txt md csv"}
+              {dragging
+                ? "Drop to attach"
+                : files.length
+                  ? "Launch → cited brief + confidence"
+                  : "Enter to launch · pdf txt md csv"}
             </p>
           </div>
           <Button onClick={submit} disabled={!canLaunch}>

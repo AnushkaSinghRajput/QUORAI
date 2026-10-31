@@ -21,6 +21,9 @@ export interface Source {
   credibility: CredibilityLevel;
   publishedAt?: string;
   favicon?: string;
+  kind?: "web" | "document";
+  page?: number;
+  documentName?: string;
 }
 
 export interface Message {

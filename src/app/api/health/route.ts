@@ -1,4 +1,5 @@
 import { countUsers } from "@/lib/auth/store";
+import { publicFailproofStatus } from "@/lib/failproof/store";
 import { getAppConfig } from "@/lib/config";
 import { jsonResponse } from "@/lib/http";
 import { persistenceMode } from "@/lib/persist";
@@ -26,5 +27,6 @@ export async function GET() {
       users,
       secretConfigured: Boolean(process.env.AUTH_SECRET?.trim()),
     },
+    failproof: publicFailproofStatus(),
   });
 }

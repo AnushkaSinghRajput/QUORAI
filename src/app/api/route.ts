@@ -28,6 +28,7 @@ export async function GET() {
       login: { method: "POST", path: "/api/auth/login" },
       logout: { method: "POST", path: "/api/auth/logout" },
       me: { method: "GET", path: "/api/auth/me" },
+      reliability: { method: "GET", path: "/api/reliability" },
     },
   });
 }

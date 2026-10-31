@@ -18,6 +18,8 @@ const SOLUTION_LINKS = [
 const NAV_LINKS = [
   { href: "/product", label: "Product" },
   { href: "/company", label: "Company" },
+  { href: "/reliability", label: "Reliability" },
+  { href: "/demo", label: "Demo" },
   { href: "/blog", label: "Blog" },
   { href: "/faq", label: "FAQ" },
 ];

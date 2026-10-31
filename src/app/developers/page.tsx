@@ -23,6 +23,8 @@ const ENDPOINTS = [
   { method: "POST", path: "/api/auth/signup", note: "Create account" },
   { method: "POST", path: "/api/auth/login", note: "Session cookie" },
   { method: "GET", path: "/api/auth/me", note: "Current user" },
+  { method: "GET", path: "/api/reliability", note: "Research execution reliability" },
+  { method: "GET", path: "/api/reliability/:id?verify=1", note: "Verify a session in Failproof" },
 ];
 
 export default function DevelopersPage() {

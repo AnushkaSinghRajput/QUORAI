@@ -1,7 +1,13 @@
 import type { ReactNode } from "react";
 
-function formatInline(text: string): ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\[\d+\])/g);
+export type CitationRenderer = (numbers: number[], key: string) => ReactNode;
+
+interface RenderOptions {
+  renderCitation?: CitationRenderer;
+}
+
+function formatInline(text: string, options: RenderOptions = {}): ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*|`[^`]+`|\[\d+(?:\s*,\s*\d+)*\])/g);
   return parts.map((part, index) => {
     if (part.startsWith("**") && part.endsWith("**")) {
       return <strong key={index}>{part.slice(2, -2)}</strong>;
@@ -9,7 +15,11 @@ function formatInline(text: string): ReactNode {
     if (part.startsWith("`") && part.endsWith("`")) {
       return <code key={index}>{part.slice(1, -1)}</code>;
     }
-    if (/^\[\d+\]$/.test(part)) {
+    if (/^\[\d+(?:\s*,\s*\d+)*\]$/.test(part)) {
+      if (options.renderCitation) {
+        const numbers = (part.match(/\d+/g) ?? []).map(Number);
+        return options.renderCitation(numbers, `c-${index}`);
+      }
       return (
         <sup
           key={index}
@@ -24,7 +34,10 @@ function formatInline(text: string): ReactNode {
 }
 
 /** Lightweight Markdown renderer for research answers (headings, lists, inline). */
-export function renderMarkdownLite(markdown: string): ReactNode[] {
+export function renderMarkdownLite(
+  markdown: string,
+  options: RenderOptions = {},
+): ReactNode[] {
   const lines = markdown.split("\n");
   const nodes: ReactNode[] = [];
   let listItems: string[] = [];
@@ -34,7 +47,7 @@ export function renderMarkdownLite(markdown: string): ReactNode[] {
     nodes.push(
       <ul key={`ul-${nodes.length}`}>
         {listItems.map((item, i) => (
-          <li key={i}>{formatInline(item)}</li>
+          <li key={i}>{formatInline(item, options)}</li>
         ))}
       </ul>,
     );
@@ -44,10 +57,10 @@ export function renderMarkdownLite(markdown: string): ReactNode[] {
   for (const line of lines) {
     if (line.startsWith("## ")) {
       flushList();
-      nodes.push(<h2 key={`h2-${nodes.length}`}>{line.slice(3)}</h2>);
+      nodes.push(<h2 key={`h2-${nodes.length}`}>{formatInline(line.slice(3), options)}</h2>);
     } else if (line.startsWith("### ")) {
       flushList();
-      nodes.push(<h3 key={`h3-${nodes.length}`}>{line.slice(4)}</h3>);
+      nodes.push(<h3 key={`h3-${nodes.length}`}>{formatInline(line.slice(4), options)}</h3>);
     } else if (/^[-*]\s+/.test(line)) {
       listItems.push(line.replace(/^[-*]\s+/, ""));
     } else if (/^\d+\.\s+/.test(line)) {
@@ -56,7 +69,7 @@ export function renderMarkdownLite(markdown: string): ReactNode[] {
       flushList();
     } else {
       flushList();
-      nodes.push(<p key={`p-${nodes.length}`}>{formatInline(line)}</p>);
+      nodes.push(<p key={`p-${nodes.length}`}>{formatInline(line, options)}</p>);
     }
   }
 

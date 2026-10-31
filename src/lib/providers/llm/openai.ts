@@ -1,5 +1,22 @@
-import type { LlmProvider } from "@/lib/providers/llm/types";
+import type { LlmProvider, LlmUsage } from "@/lib/providers/llm/types";
 import { buildFollowUpPrompt } from "@/lib/research/prompts";
+
+function tokens(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0
+    ? value
+    : undefined;
+}
+
+function usageFrom(payload: {
+  model?: string;
+  usage?: { prompt_tokens?: number; completion_tokens?: number } | null;
+}): LlmUsage {
+  return {
+    model: payload.model,
+    inputTokens: tokens(payload.usage?.prompt_tokens),
+    outputTokens: tokens(payload.usage?.completion_tokens),
+  };
+}
 
 export function createOpenAIProvider(
   apiKey: string,
@@ -17,6 +34,7 @@ export function createOpenAIProvider(
         body: JSON.stringify({
           model,
           stream: true,
+          stream_options: { include_usage: true },
           temperature: 0.3,
           messages,
         }),
@@ -30,6 +48,8 @@ export function createOpenAIProvider(
       const decoder = new TextDecoder();
       let buffer = "";
       let full = "";
+      let usage: LlmUsage = { model };
+      let stopReason: string | undefined;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -45,8 +65,21 @@ export function createOpenAIProvider(
           if (data === "[DONE]") continue;
           try {
             const json = JSON.parse(data) as {
-              choices?: Array<{ delta?: { content?: string } }>;
+              model?: string;
+              choices?: Array<{
+                finish_reason?: string | null;
+                delta?: { content?: string };
+              }>;
+              usage?: { prompt_tokens?: number; completion_tokens?: number } | null;
             };
+            const next = usageFrom(json);
+            usage = {
+              model: next.model ?? usage.model,
+              inputTokens: next.inputTokens ?? usage.inputTokens,
+              outputTokens: next.outputTokens ?? usage.outputTokens,
+            };
+            const finish = json.choices?.[0]?.finish_reason;
+            if (finish) stopReason = finish;
             const token = json.choices?.[0]?.delta?.content;
             if (token) {
               full += token;
@@ -58,7 +91,7 @@ export function createOpenAIProvider(
         }
       }
 
-      return full;
+      return { text: full, ...usage, stopReason: stopReason ?? "stop" };
     },
     async suggestFollowUps(query, answer) {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -84,14 +117,23 @@ export function createOpenAIProvider(
       }
 
       const data = (await response.json()) as {
-        choices?: Array<{ message?: { content?: string } }>;
+        model?: string;
+        usage?: { prompt_tokens?: number; completion_tokens?: number } | null;
+        choices?: Array<{
+          finish_reason?: string | null;
+          message?: { content?: string };
+        }>;
       };
       const text = data.choices?.[0]?.message?.content ?? "";
-      return text
-        .split("\n")
-        .map((line) => line.replace(/^\d+[\).]\s*/, "").trim())
-        .filter(Boolean)
-        .slice(0, 3);
+      return {
+        followUps: text
+          .split("\n")
+          .map((line) => line.replace(/^\d+[\).]\s*/, "").trim())
+          .filter(Boolean)
+          .slice(0, 3),
+        ...usageFrom(data),
+        stopReason: data.choices?.[0]?.finish_reason ?? "stop",
+      };
     },
   };
 }

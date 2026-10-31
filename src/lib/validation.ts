@@ -7,6 +7,7 @@ export const researchRequestSchema = z.object({
     .min(2, "Query must be at least 2 characters")
     .max(500, "Query is too long"),
   mode: z.enum(["quick", "deep"]).default("quick"),
+  protection: z.enum(["protected", "unprotected"]).default("protected"),
   sessionId: z.string().optional(),
   history: z
     .array(
@@ -22,7 +23,8 @@ export const researchRequestSchema = z.object({
       z.object({
         name: z.string().trim().min(1).max(180),
         mime: z.string().max(80).optional(),
-        text: z.string().min(8).max(24_000),
+        text: z.string().min(8).max(120_000),
+        pageCount: z.number().int().min(1).max(2000).optional(),
       }),
     )
     .max(3)

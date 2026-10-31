@@ -10,7 +10,7 @@ export const BRAND = {
     headline: "Evidence-first research",
     headlineAccent: "synthesized from the live web.",
     subcopy:
-      "Retrieve sources across the open web, score credibility, and stream a cited brief built for teams who need answers they can audit and defend.",
+      "Retrieve sources across the open web, ground answers in uploaded PDFs, score citation confidence, and stream a brief built for teams who need answers they can audit and defend.",
     cta: "Open research console",
   },
 } as const;

@@ -10,6 +10,7 @@ import {
 } from "@/lib/store/research-store";
 
 const controllers = new Map<string, AbortController>();
+const sessionAttachments = new Map<string, ResearchAttachment[]>();
 
 async function consumeResearchStream(
   sessionId: string,
@@ -121,6 +122,7 @@ export function beginResearch(
     query: displayQuery,
     mode,
   });
+  if (attachments?.length) sessionAttachments.set(session.id, attachments);
   void consumeResearchStream(session.id, {
     query,
     mode,
@@ -151,5 +153,6 @@ export function continueResearch(sessionId: string, query: string) {
     mode: session.mode,
     sessionId,
     history,
+    attachments: sessionAttachments.get(sessionId),
   });
 }
