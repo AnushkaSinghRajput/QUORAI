@@ -25,6 +25,8 @@ const ENDPOINTS = [
   { method: "GET", path: "/api/auth/me", note: "Current user" },
   { method: "GET", path: "/api/reliability", note: "Research execution reliability" },
   { method: "GET", path: "/api/reliability/:id?verify=1", note: "Verify a session in Failproof" },
+  { method: "POST", path: "/api/demo/compare", note: "Protected vs unprotected research demo" },
+  { method: "POST", path: "/api/files/extract", note: "Extract text from uploaded PDF/text" },
 ];
 
 export default function DevelopersPage() {
@@ -39,8 +41,9 @@ export default function DevelopersPage() {
           Backend, ready to call.
         </h1>
         <p className="mt-3 max-w-xl text-ink-soft">
-          Same routes the product uses: waitlist, auth, catalog, and streaming
-          research. Demo mode works with no vendor keys.
+          Same routes the product uses: waitlist, auth, catalog, streaming
+          research, reliability, and the protected vs unprotected demo. Live
+          research requires Tavily and OpenAI keys.
         </p>
 
         <pre className="surface mt-8 overflow-x-auto rounded-[1.4rem] p-5 text-xs leading-relaxed text-ink-soft">

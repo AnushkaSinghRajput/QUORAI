@@ -92,25 +92,25 @@ export const MODEL_CARDS = [
     id: "openai",
     name: "OpenAI",
     models: "GPT-4o mini / GPT-4o",
-    use: "Fast streaming synthesis with strong instruction following.",
+    use: "Primary live synthesis for cited research briefs.",
   },
   {
     id: "anthropic",
     name: "Anthropic",
     models: "Claude 3.5 Haiku / Sonnet",
-    use: "Careful long-form briefs and conservative citations.",
+    use: "Optional fallback for long-form briefs and conservative citations.",
   },
   {
-    id: "mock",
-    name: "QUORAI Demo",
-    models: "On-device mock synthesis",
-    use: "Full product tour with no keys. Same pipeline, sample evidence.",
+    id: "tavily",
+    name: "Tavily",
+    models: "Web search API",
+    use: "Primary multi-source retrieval with domain-ranked evidence.",
   },
 ] as const;
 
 export const METRICS = [
   { value: "12+", label: "sources per Deep Research pass" },
   { value: "4", label: "live pipeline stages you can watch" },
-  { value: "3", label: "pluggable LLM families" },
-  { value: "0", label: "keys required to demo" },
+  { value: "2", label: "primary live providers (Tavily + OpenAI)" },
+  { value: "1", label: "Failproof workspace (quoraai) for traces" },
 ] as const;
