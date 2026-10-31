@@ -43,8 +43,9 @@ export function HomeView() {
     attachments?: Parameters<typeof beginResearch>[2],
   ) {
     const id = beginResearch(query, researchMode, attachments);
+    const hash = attachments?.length ? "#brief" : "";
     queueMicrotask(() => {
-      void router.push(`/research/${id}`);
+      void router.push(`/research/${id}${hash}`);
     });
   }
 

@@ -82,6 +82,16 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/reliability" className="transition hover:text-ink">
+                  Reliability
+                </Link>
+              </li>
+              <li>
+                <Link href="/demo" className="transition hover:text-ink">
+                  Live demo
+                </Link>
+              </li>
+              <li>
                 <Link href="/signup" className="transition hover:text-ink">
                   Join beta
                 </Link>
