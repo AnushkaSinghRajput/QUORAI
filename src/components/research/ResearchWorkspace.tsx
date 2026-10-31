@@ -192,13 +192,13 @@ export function ResearchWorkspace({
             <span className="rounded-full bg-accent-soft px-2 py-0.5 text-accent">
               {MODE_META[session.mode].label}
             </span>
-            {session.demoMode ? (
-              <span className="rounded-full bg-danger-soft px-2 py-0.5 text-danger">
-                Demo mode
-              </span>
-            ) : session.liveReady ? (
+            {session.liveReady ? (
               <span className="rounded-full bg-success/10 px-2 py-0.5 text-success">
                 Live · {session.searchProvider ?? "search"}/{session.llmProvider ?? "llm"}
+              </span>
+            ) : session.demoMode ? (
+              <span className="rounded-full bg-danger-soft px-2 py-0.5 text-danger">
+                Demo mode
               </span>
             ) : null}
             <span className="inline-flex items-center gap-1">
