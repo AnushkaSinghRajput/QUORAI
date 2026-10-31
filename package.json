@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test src/lib/failproof/guards.test.ts src/lib/citations.test.ts",
+    "test": "tsx --test src/lib/failproof/guards.test.ts src/lib/citations.test.ts src/lib/config.test.ts",
     "verify:failproof": "node scripts/verify-failproof-ingest.mjs",
     "check:providers": "node scripts/check-live-providers.mjs",
     "verify": "npm run typecheck && npm run lint && npm run test && npm run build"
