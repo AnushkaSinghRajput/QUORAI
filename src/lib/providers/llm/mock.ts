@@ -39,11 +39,11 @@ export function createMockLlmProvider(): LlmProvider {
         await onToken(chunk);
         await sleep(10);
       }
-      return answer;
+      return { text: answer, model: "mock", stopReason: "stop" };
     },
     async suggestFollowUps(query) {
       await sleep(200);
-      return buildMockFollowUps(query);
+      return { followUps: buildMockFollowUps(query), model: "mock", stopReason: "stop" };
     },
   };
 }

@@ -1,5 +1,11 @@
-import type { LlmProvider } from "@/lib/providers/llm/types";
+import type { LlmProvider, LlmUsage } from "@/lib/providers/llm/types";
 import { buildFollowUpPrompt } from "@/lib/research/prompts";
+
+function tokens(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0
+    ? value
+    : undefined;
+}
 
 export function createAnthropicProvider(
   apiKey: string,
@@ -37,6 +43,8 @@ export function createAnthropicProvider(
       const decoder = new TextDecoder();
       let buffer = "";
       let full = "";
+      const usage: LlmUsage = { model };
+      let stopReason: string | undefined;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -52,8 +60,23 @@ export function createAnthropicProvider(
           try {
             const json = JSON.parse(data) as {
               type?: string;
-              delta?: { type?: string; text?: string };
+              message?: {
+                model?: string;
+                usage?: { input_tokens?: number; output_tokens?: number };
+              };
+              delta?: { type?: string; text?: string; stop_reason?: string | null };
+              usage?: { output_tokens?: number };
             };
+            if (json.type === "message_start") {
+              usage.model = json.message?.model ?? usage.model;
+              usage.inputTokens = tokens(json.message?.usage?.input_tokens) ?? usage.inputTokens;
+              usage.outputTokens =
+                tokens(json.message?.usage?.output_tokens) ?? usage.outputTokens;
+            }
+            if (json.type === "message_delta") {
+              if (json.delta?.stop_reason) stopReason = json.delta.stop_reason;
+              usage.outputTokens = tokens(json.usage?.output_tokens) ?? usage.outputTokens;
+            }
             if (
               json.type === "content_block_delta" &&
               json.delta?.type === "text_delta" &&
@@ -68,7 +91,7 @@ export function createAnthropicProvider(
         }
       }
 
-      return full;
+      return { text: full, ...usage, stopReason: stopReason ?? "end_turn" };
     },
     async suggestFollowUps(query, answer) {
       const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -95,15 +118,24 @@ export function createAnthropicProvider(
       }
 
       const data = (await response.json()) as {
+        model?: string;
+        stop_reason?: string | null;
+        usage?: { input_tokens?: number; output_tokens?: number };
         content?: Array<{ type?: string; text?: string }>;
       };
       const text =
         data.content?.find((block) => block.type === "text")?.text ?? "";
-      return text
-        .split("\n")
-        .map((line) => line.replace(/^\d+[\).]\s*/, "").trim())
-        .filter(Boolean)
-        .slice(0, 3);
+      return {
+        followUps: text
+          .split("\n")
+          .map((line) => line.replace(/^\d+[\).]\s*/, "").trim())
+          .filter(Boolean)
+          .slice(0, 3),
+        model: data.model ?? model,
+        stopReason: data.stop_reason ?? "end_turn",
+        inputTokens: tokens(data.usage?.input_tokens),
+        outputTokens: tokens(data.usage?.output_tokens),
+      };
     },
   };
 }
