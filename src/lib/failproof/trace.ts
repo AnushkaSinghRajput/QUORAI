@@ -310,10 +310,12 @@ export class ResearchTrace {
       ),
     );
     this.emitHook(drift, "model_response");
+    // Protected always hard-validates. FAILPROOFAI_ENFORCE_EVIDENCE=1 also
+    // requests deny actions on unprotected runs (applyProtection may soften them).
     const evidence = inspectEvidence(
       answer,
       sources,
-      this.protection === "protected",
+      this.protection === "protected" || config.enforceEvidence,
     );
     const evidenceDecision = this.decide(evidence.decision);
     this.emitHook(evidenceDecision, "model_response", {
