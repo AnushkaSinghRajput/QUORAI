@@ -39,6 +39,15 @@ Failproof workspace: [https://app.befailproof.ai/quoraai](https://app.befailproo
 2. Filter environment `production`, agent `quorai-research`
 3. Inspect `agent_start`, tool, model, and `agent_end` events for a session
 
+## When model billing blocks synthesis
+
+If Tavily search succeeds but OpenAI and Anthropic return billing or quota errors, QUORAI still finishes the run with an **extractive brief**:
+
+- Findings are assembled only from retrieved source snippets (and document evidence when attached)
+- The brief is labeled **Extractive brief** — it is not mock search and not model narrative
+- The workspace badge shows `extractive` instead of a live LLM provider
+- Add credits on OpenAI or Anthropic, then retry for full model synthesis and follow-ups
+
 ## Integrity rule
 
-Search and synthesis use live providers when keys are configured. Mock providers only run when explicitly enabled and are labeled — never presented as live research.
+Search and synthesis use live providers when keys are configured. Mock providers only run when explicitly enabled and are labeled — never presented as live research. Extractive briefs are an honest degradation path when live search works but model APIs are billing-blocked.
