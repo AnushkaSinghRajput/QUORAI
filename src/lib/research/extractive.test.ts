@@ -41,4 +41,23 @@ describe("extractive brief", () => {
     assert.match(text, /no credits remaining/);
     assert.doesNotMatch(text, /demo synthesis/i);
   });
+
+  it("strips billing portal URLs so evidence checks stay clean", () => {
+    const sources: Source[] = [
+      {
+        id: "1",
+        title: "Policy note",
+        url: "https://docs.example.com/policy",
+        domain: "docs.example.com",
+        snippet: "Organizations should monitor retrieval quality.",
+        relevance: 0.8,
+        credibility: "medium",
+      },
+    ];
+    const text = buildExtractiveBrief("retrieval quality", sources, "quick", [
+      "openai: OpenAI request failed (429): Add credits at https://platform.openai.com/settings/organization/billing/",
+    ]);
+    assert.doesNotMatch(text, /https:\/\/platform\.openai\.com/);
+    assert.match(text, /\[billing portal\]/);
+  });
 });
