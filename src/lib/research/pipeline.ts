@@ -320,6 +320,7 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
               );
             }
             let lastError: Error | null = null;
+            const modelFailures: string[] = [];
             for (const provider of providers) {
               try {
                 if (provider.name === "mock") {
@@ -375,6 +376,7 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
                 if (error instanceof PolicyDenied) throw error;
                 lastError =
                   error instanceof Error ? error : new Error(String(error));
+                modelFailures.push(`${provider.name}: ${lastError.message}`);
                 logger.warn("LLM provider failed; trying next fallback", {
                   provider: provider.name,
                   error: lastError.message,
@@ -390,7 +392,13 @@ export async function runResearchPipeline(input: RunResearchInput, emit: Emit) {
                 }
               }
             }
-            if (lastError) throw lastError;
+            if (lastError) {
+              throw new Error(
+                modelFailures.length > 1
+                  ? `All LLM providers failed. ${modelFailures.join(" | ")}`
+                  : lastError.message,
+              );
+            }
           });
 
           if (!answer.trim()) {
